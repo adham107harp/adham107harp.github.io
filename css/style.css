@@ -65,7 +65,7 @@ em{font-style:italic;color:var(--gold2)}
 .bar>*{pointer-events:auto}
 .brand{display:flex;align-items:center;gap:10px;color:var(--ink)}
 .mono-mark{display:grid;place-items:center;width:36px;height:36px;border:1px solid var(--gold);border-radius:50%;font:400 17px var(--serif);color:var(--gold)}
-.brand-name{font:400 21px var(--serif)}
+.brand-name{font:400 21px var(--serif);white-space:nowrap}
 .links{display:flex;gap:2px;margin-left:calc(var(--stageW) - 210px)}
 .links a{color:var(--muted);font:500 14px var(--sans);padding:8px 11px;border-radius:999px}
 .links a:hover,.links a.on{color:var(--ink);background:rgba(233,180,76,.12)}
@@ -77,7 +77,7 @@ em{font-style:italic;color:var(--gold2)}
 .chip-btn .spk{fill:currentColor;stroke:none}.chip-btn .w1,.chip-btn .w2{display:none}
 .chip-btn.on .w1,.chip-btn.on .w2{display:block}.chip-btn.on .x{display:none}
 .chip-btn.art{font:600 13px var(--sans)}
-.chip-btn.art .gl{font:400 17px "Noto Sans Egyptian Hieroglyphs",serif;color:var(--gold)}
+.chip-btn.art .gl{display:inline-block;width:18px;line-height:1;text-align:center;font:400 16px "Noto Sans Egyptian Hieroglyphs",serif;color:var(--gold);overflow:hidden}
 .chip-btn.art small{color:var(--muted);font-size:12px}
 .chip-btn.art.bump{animation:bump .6s}
 @keyframes bump{40%{transform:scale(1.15)}}

@@ -157,9 +157,9 @@ export function createGuide() {
   // torso: blazer with lapels, shirt, tie, pocket square, buttons
   const torso = new THREE.Group(); torso.position.y = 0.72; body.add(torso);
   const jacket = part(new RoundedBoxGeometry(0.52, 0.5, 0.31, 5, 0.11), SUIT); jacket.position.y = 0.26; torso.add(jacket);
-  const shirt = new THREE.Mesh(new THREE.CylinderGeometry(0.0, 0.12, 0.27, 3), mat(SHIRT)); shirt.rotation.set(Math.PI, Math.PI / 6, 0); shirt.scale.z = 0.25; shirt.position.set(0, 0.37, 0.15); torso.add(shirt);
+  const shirt = new THREE.Mesh(new THREE.CylinderGeometry(0.0, 0.09, 0.22, 3), mat(SHIRT)); shirt.rotation.set(Math.PI, Math.PI / 6, 0); shirt.scale.z = 0.25; shirt.position.set(0, 0.4, 0.15); torso.add(shirt);
   for (const s of [-1, 1]) { const lap = new THREE.Mesh(new RoundedBoxGeometry(0.055, 0.3, 0.02, 1, 0.008), mat(LAPEL)); lap.position.set(s * 0.075, 0.37, 0.162); lap.rotation.z = s * 0.38; torso.add(lap); }
-  for (const s of [-1, 1]) { const cp = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.07, 3), mat(SHIRT)); cp.position.set(s * 0.045, 0.47, 0.158); cp.rotation.set(0, 0, Math.PI + s * 0.5); cp.scale.z = 0.3; torso.add(cp); }
+  for (const s of [-1, 1]) { const cp = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.05, 3), mat(SHIRT)); cp.position.set(s * 0.04, 0.475, 0.158); cp.rotation.set(0, 0, Math.PI + s * 0.5); cp.scale.z = 0.3; torso.add(cp); }
   const goldM = new THREE.MeshPhysicalMaterial({ color: PAL.gold, metalness: 1, roughness: 0.25 });
   for (const y of [0.13]) { const b = new THREE.Mesh(new THREE.SphereGeometry(0.016, 12, 8), goldM); b.position.set(0, y, 0.16); torso.add(b); }
   const pocket = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.05, 3), new THREE.MeshPhysicalMaterial({ color: PAL.gold, roughness: 0.35, sheen: 1 })); pocket.position.set(-0.16, 0.405, 0.158); pocket.rotation.z = Math.PI; pocket.scale.z = 0.3; torso.add(pocket);
@@ -197,11 +197,12 @@ export function createGuide() {
     const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
     for (let i = 0; i < P.count; i++) {
       n.fromBufferAttribute(P, i).normalize();
-      const f = (n.z * 0.5 + 0.5) ** 1.6, lim = -0.42 + f * 0.92 - Math.max(0, Math.abs(n.x) - 0.8) * 0.6; // hairline: forehead high, nape low
+      const f = (n.z * 0.5 + 0.5) ** 1.6, lim = -0.42 + f * 0.95 + 0.07 * Math.exp(-(n.x ** 2) / 0.05) * Math.max(0, n.z) - Math.max(0, Math.abs(n.x) - 0.8) * 0.6; // hairline: forehead high, nape low
       const t = sm(lim - 0.05, lim + 0.06, n.y);
       let r = 0.31 + t * 0.068;
-      const qd = ((n.z - 0.5) ** 2) / 0.09 + ((n.y - 0.75) ** 2) / 0.05 + (n.x ** 2) / 0.22; // quiff volume, up and forward
-      r += t * 0.12 * Math.exp(-qd);
+      const qd = ((n.z - 0.62) ** 2) / 0.1 + ((n.y - 0.68) ** 2) / 0.06 + (n.x ** 2) / 0.16; // quiff volume, up and forward
+      r += t * 0.2 * Math.exp(-qd);
+      r += t * 0.07 * Math.exp(-(((n.z - 0.2) ** 2) / 0.12 + ((n.y - 0.9) ** 2) / 0.05)); // crown lift
       r += t * 0.03 * sm(0.2, 0.9, n.y);
       r += t * 0.006 * Math.sin(Math.atan2(n.x, n.z) * 26 + n.y * 9);
       v.copy(n).multiplyScalar(r); P.setXYZ(i, v.x, v.y, v.z);

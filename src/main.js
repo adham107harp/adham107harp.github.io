@@ -333,8 +333,11 @@ async function start() {
   }
   gsap.ticker.add(frame);
   if (location.hash.startsWith('#hq')) window.__game = world.game;
+  if (location.hash.startsWith('#hq')) window.__face = (m) => { if (m) guide.setMood(m, 60); const h = guide.headAnchor(); h.y -= 0.55; const d = new THREE.Vector3(camera.position.x - h.x, 0, camera.position.z - h.z).normalize(); focus = { tgt: h, pos: h.clone().add(d.multiplyScalar(1.9)).add(new THREE.Vector3(0, 0.15, 0)), k: 0, q: qS }; };
   if (location.hash === '#debug') window.__dbg = () => ({ qS, q: scrollQ(), lastSpoken, settleT, mode: guide.st.mode, speed: guide.st.speed, pos: guide.root.position.toArray().map((n) => +n.toFixed(2)), scroll: lenis.scroll, bounds });
 
+  // compile shaders in parallel while the loader is still up, so the first frames don't stall
+  try { await Promise.race([renderer.compileAsync(scene, camera), new Promise((r) => setTimeout(r, 4000))]); } catch (e) {}
   // ---------- reveal ----------
   await new Promise((r) => { if (total <= loaded) r(); manager.onLoad = r; setTimeout(r, 6000); });
   setPct(1);
