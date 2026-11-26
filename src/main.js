@@ -296,6 +296,7 @@ async function start() {
   // ---------- resize ----------
   function resize() {
     const r = stageRect(), w = Math.max(1, r.width), h = Math.max(1, r.height);
+    if (live) live.frozen = 0;
     renderer.setSize(w, h, false); css3d.setSize(w, h); composer.setSize(w, h); bloom.setSize(w / 2, h / 2); if (gtao) gtao.setSize(w, h);
     if (rigNarrow !== isPortrait()) buildRig();
     camera.aspect = w / h; camera.fov = w / h < 0.8 ? 58 : w / h < 1.2 ? 50 : 42; camera.updateProjectionMatrix();
@@ -311,6 +312,9 @@ async function start() {
   let frames = 0, slowAcc = 0, perfChecked = location.hash.startsWith('#hq'); const snap = location.hash === '#hqsnap';
 
   function frame() {
+    // a live demo is open and the camera has arrived: the 3D scene behind it is still, so stop drawing it
+    // and leave the GPU to the demo
+    if (live && live.frozen > 3) { tPrev = performance.now(); return; }
     const now = performance.now(), dt = Math.min((now - tPrev) / 1000, 0.05); tPrev = now; tAcc += dt; const t = tAcc;
     const q = scrollQ();
     qS += (q - qS) * Math.min(1, dt * (reduced ? 30 : 3.4)); if (snap) qS = q;
@@ -376,6 +380,7 @@ async function start() {
 
     grade.uniforms.t.value = t;
     if (useComposer) composer.render(dt); else renderer.render(scene, camera);
+    if (live && focus && focus.k > 0.995 && live.wrap.style.opacity === '1') live.frozen = (live.frozen || 0) + 1;
     if (live) { live.wrap.style.opacity = String(THREE.MathUtils.clamp(Math.max((now - live.t0 - 900) / 400, focus ? (focus.k - 0.9) * 10 : 1), 0, 1)); css3d.render(liveScene, camera); }
 
     // adaptive quality after warm-up
