@@ -35,7 +35,7 @@ em{font-style:italic;color:var(--gold2)}
 #mood-chip{margin:2px 0 0;display:flex;align-items:center;gap:7px;font:500 12.5px var(--sans);color:var(--muted)}
 #mood-chip i{width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px var(--gold);transition:background .4s,box-shadow .4s}
 
-#bubble{position:absolute;z-index:4;left:0;top:0;max-width:min(300px,80%);padding:12px 42px 12px 16px;border-radius:16px;background:#fbf4e4;color:#191530;font:500 15px/1.45 var(--sans);box-shadow:0 12px 34px rgba(0,0,0,.35);will-change:transform;pointer-events:auto}
+#bubble{position:absolute;z-index:4;left:0;top:0;max-width:min(clamp(260px,24vw,360px),80%);padding:12px 42px 12px 16px;border-radius:16px;background:#fbf4e4;color:#191530;font:500 15px/1.45 var(--sans);box-shadow:0 12px 34px rgba(0,0,0,.35);will-change:transform;pointer-events:auto}
 #bubble::after{content:"";position:absolute;left:var(--tail,30px);bottom:-9px;width:18px;height:18px;background:#fbf4e4;transform:translateX(-50%) rotate(45deg);border-radius:3px}
 #bubble.below::after{bottom:auto;top:-8px}
 #bubble.side::after{display:none}
@@ -44,6 +44,7 @@ em{font-style:italic;color:var(--gold2)}
 #bubble .ghost{visibility:hidden}#bubble .typed{position:absolute;inset:0}
 #bubble-next{position:absolute;right:6px;top:50%;transform:translateY(-50%);z-index:2;width:30px;height:30px;border-radius:50%;border:0;background:#191530;color:#fbf4e4;font:700 18px/1 var(--sans);cursor:pointer}
 #bubble[dir=rtl] #bubble-next{right:auto;left:6px;transform:translateY(-50%) scaleX(-1)}
+#bubble{font-size:clamp(13.5px,.3vw + 10px,16px)}#bubble[dir=rtl]{font-size:clamp(14px,.3vw + 10.5px,16.5px)}
 #poke-hint{position:absolute;z-index:4;left:0;top:0;padding:5px 11px;border-radius:999px;background:rgba(7,12,36,.85);border:1px solid var(--line);font:600 12.5px var(--sans);color:var(--gold);pointer-events:none;opacity:0;transition:opacity .3s}
 #poke-hint.on{opacity:1}
 #game-hud{position:absolute;z-index:5;top:calc(var(--barH) + 10px);left:50%;transform:translateX(-50%);display:flex;align-items:baseline;gap:6px;padding:9px 18px;border-radius:999px;background:rgba(7,12,36,.9);border:1px solid var(--gold);font:500 13px var(--sans);color:var(--muted);white-space:nowrap}
@@ -258,7 +259,9 @@ html.ar #bubble{font-family:var(--ar)}
   .pipe i{display:none}.pipe .fuse{grid-column:1/-1}
   #req .row,#art-list{grid-template-columns:minmax(0,1fr)}
   #toasts{left:12px;right:12px;top:auto;bottom:14px}
-  #bubble{max-width:min(46%,300px);font-size:13.5px;padding:10px 38px 10px 13px}
+  #bubble{max-width:min(74%,340px);font-size:clamp(12.5px,3.4vw,14px);line-height:1.4;padding:9px 38px 9px 12px}
+  #bubble[dir=rtl]{font-size:clamp(13px,3.5vw,14.5px);line-height:1.5;padding:9px 12px 9px 38px}
+  #bubble-next{width:26px;height:26px;font-size:16px}
   #game-hud{top:auto;bottom:12px}
 }
 @media (max-width:420px){ .chip-btn{min-width:36px;height:36px;padding:0 8px} .tools{gap:4px} .chip-btn.art small{display:none} }

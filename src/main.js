@@ -487,9 +487,9 @@ function setupUI() {
   api.place = (x, y, ok, SR) => {
     if (bubble.hidden) return;
     bw = bubble.offsetWidth; bh = bubble.offsetHeight;
-    const top0 = isNarrow() ? 62 : 74;
+    const compact = isNarrow() || SR.height < 520, top0 = isNarrow() ? 62 : 74;
     let left = x - 40, top = y - bh - 20, below = false, side = false;
-    if (top < top0 && isNarrow()) { side = true; top = top0; left = x + 44 + bw < SR.width ? x + 44 : x - bw - 30; } // no room above: sit in the sky band beside his head, clear of the props
+    if (top < top0 && compact) { side = true; top = top0; left = x > SR.width / 2 ? 10 : SR.width - bw - 10; } // no room above: a compact card in the sky band, on the side away from him
     else if (top < top0) { top = y + 30; below = true; }
     left = Math.max(10, Math.min(SR.width - bw - 10, left));
     top = Math.max(top0, Math.min(SR.height - bh - 10, top));
