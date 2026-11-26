@@ -258,7 +258,7 @@ html.ar #bubble{font-family:var(--ar)}
   .pipe i{display:none}.pipe .fuse{grid-column:1/-1}
   #req .row,#art-list{grid-template-columns:minmax(0,1fr)}
   #toasts{left:12px;right:12px;top:auto;bottom:14px}
-  #bubble{max-width:72%;font-size:14px}
+  #bubble{max-width:min(46%,300px);font-size:13.5px;padding:10px 38px 10px 13px}
   #game-hud{top:auto;bottom:12px}
 }
 @media (max-width:420px){ .chip-btn{min-width:36px;height:36px;padding:0 8px} .tools{gap:4px} .chip-btn.art small{display:none} }

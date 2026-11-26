@@ -391,12 +391,12 @@ function setupUI() {
 
   api.lines = (arr) => { clearTimeout(tempT); queue = arr; idx = 0; typeLine(arr[0]); };
   api.say = (s, { temp, hold = 3200 } = {}) => {
-    const resume = queue.slice(); const at = idx;
+    const resume = queue.slice(); const at = idx; const resumeRef = queue;
     typeLine(s);
     clearTimeout(tempT);
-    if (temp && resume.length) tempT = setTimeout(() => { queue = resume; idx = at; typeLine(queue[idx]); }, hold);
+    if (temp) tempT = setTimeout(() => { if (resume.length && queue === resumeRef) { idx = at; typeLine(queue[idx]); } }, hold);
   };
-  api.hide = () => { clearTimeout(autoT); if (!visible) return; visible = false; talking = false; if (typing) typing.kill(); gsap.to(bubble, { scale: 0.7, opacity: 0, duration: 0.2, onComplete: () => { if (!visible) bubble.hidden = true; } }); };
+  api.hide = () => { clearTimeout(autoT); clearTimeout(tempT); queue = []; if (!visible) return; visible = false; talking = false; if (typing) typing.kill(); gsap.to(bubble, { scale: 0.7, opacity: 0, duration: 0.2, onComplete: () => { if (!visible) bubble.hidden = true; } }); };
   api.talking = () => talking;
   let bw = 0, bh = 0;
   api.place = (x, y, ok, SR) => {
