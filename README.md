@@ -10,12 +10,12 @@ Built with [three.js](https://github.com/mrdoob/three.js), [GSAP](https://github
 
 ## Features
 
-- Physically based rendering: procedural sandstone (albedo, normal and roughness maps), sky-based environment lighting, soft moon shadows, ambient occlusion (GTAO), bloom and a light film grade
-- A chibi guide with fabric, skin and hair materials who walks the stairs, follows your cursor and talks in a typed speech bubble
-- Live GitHub panel (public API, cached) with my latest repos and commits
-- Generated sound, off by default: desert wind, a drone with oud-like plucks in a Hijaz mode, and UI effects
-- Click the moon, the ICPC balloons, the rocket and the golden capstone
-- Terminal easter egg, arrow-key navigation between levels, adaptive quality for slower devices, reduced-motion support
+- **A guide with moods.** Mini-Adham has a painted, expressive face and 13 moods (happy, excited, focused, thinking, cool, surprised, shy, annoyed, sleepy, dizzy, love, worried, vibing). They change with the level, with what you do (poke him, scroll too fast, leave him idle, turn the music on) and he puts on sunglasses or headphones when the mood calls for it.
+- **Contact form that delivers.** Messages go straight to my inbox through [FormSubmit](https://formsubmit.co), with the HTTP request and response shown live, a honeypot against bots and an email fallback.
+- **Gamified.** 10 hidden artifacts to collect, a Balloon Rush mini-game in the Arena, an attack simulator that drives the IoT Sentinel hologram, and a terminal (`help`, `mood cool`, `sudo hire adham`).
+- **Physically based rendering.** Procedural sandstone (albedo, normal and roughness maps), sky-based environment lighting, soft moon shadows, ambient occlusion (GTAO), bloom and a light film grade.
+- **Live GitHub panel** with my latest repos and commits, tech logos from [Simple Icons](https://simpleicons.org), and generated sound (off by default): desert wind and a Hijaz-mode drone with oud-like plucks.
+- Arrow-key navigation, adaptive quality for slower devices, reduced-motion support, English / Egyptian Arabic guide.
 
 ## Run it
 
@@ -41,6 +41,7 @@ Push this folder to a repo (for example `adham107harp.github.io`), then Settings
 | `src/textures.js` | Procedural PBR textures (stone, sand, moon) |
 | `src/sound.js` | WebAudio ambience and effects |
 | `src/github.js` | Live GitHub data |
+| `src/achievements.js` | The 10 hidden artifacts |
 | `src/main.js` | Scroll → camera/character, post-processing, bubble, terminal, contact form |
 
 Easter eggs: press <kbd>`</kbd> for the terminal (`help`, `sudo hire adham`), click mini-Adham to poke him.

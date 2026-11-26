@@ -13,7 +13,9 @@ import { SplitText } from 'gsap/SplitText';
 import Lenis from 'lenis';
 import { buildWorld, H } from './world.js';
 import { createGuide, guideXZ, heightAt, standPoint, STAND_COUNT } from './guide.js';
-import { LINES, POKES, SENT, MODES, LEVEL_NAMES, CLICKS } from './lines.js';
+import { LINES, POKES, SENT, MODES, LEVEL_NAMES, CLICKS, SKILLS, MOOD_BY_LEVEL, EXTRA } from './lines.js';
+import { artifacts } from './achievements.js';
+import { MOODS } from './guide.js';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 const $ = (s) => document.querySelector(s);
@@ -79,6 +81,49 @@ async function start() {
   const quality = isNarrow() || (navigator.hardwareConcurrency || 8) <= 4 ? 'low' : 'high';
   const world = buildWorld(scene, renderer, manager, quality);
   const guide = createGuide(); scene.add(guide.root);
+  const L = (o) => (typeof o === 'object' ? o[lang] : o);
+  let lastInput = performance.now(), wasSleepy = false, pokes = [], focus = null;
+  for (const ev of ['pointermove', 'keydown', 'wheel', 'touchstart']) addEventListener(ev, () => { lastInput = performance.now(); }, { passive: true });
+  ui.mood = (m) => guide.setMood(m, 4);
+
+  // stack chips: tell where a skill was used, pull its cartouche out of the orbit
+  document.querySelectorAll('[data-skill]').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-skill].on').forEach((x) => x.classList.remove('on')); b.classList.add('on');
+    const k = b.dataset.skill, line = SKILLS[k]; world.highlightSkill && world.highlightSkill(k);
+    if (line) ui.say(`${k}: ${line[lang === 'ar' ? 1 : 0]}`, { temp: true, hold: 5200 });
+    guide.setMood('excited', 2.5); sound.play('arrive');
+  }));
+  // project cards: fly the camera to the matching 3D screen
+  document.querySelectorAll('.see3d').forEach((b) => b.addEventListener('click', () => {
+    const h = world.props.screens?.[b.dataset.screen]; if (!h) return;
+    const tgt = new THREE.Vector3(); h.getWorldPosition(tgt);
+    const n = new THREE.Vector3(0, 0, 1).applyQuaternion(h.getWorldQuaternion(new THREE.Quaternion()));
+    focus = { tgt, pos: tgt.clone().add(n.multiplyScalar(2.6)).add(new THREE.Vector3(0, 0.25, 0)), k: 0, q: qS };
+    guide.setMode('point'); guide.setMood('excited', 3); ui.say(L(EXTRA.focus), { temp: true }); sound.play('whoosh');
+  }));
+  // research: attack simulator drives the hologram
+  const threat = $('#threat'), riskOut = $('#risk-out');
+  threat.addEventListener('input', () => {
+    const v = threat.value / 100, tier = Math.min(3, Math.floor(v * 4 - 0.0001)); world.props.research.userData.threat = v;
+    riskOut.dataset.tier = Math.max(0, tier); riskOut.querySelector('b').textContent = ['Low', 'Medium', 'High', 'Critical'][Math.max(0, tier)];
+    if (v > 0.95) { if (artifacts.unlock('red-team')) {} guide.setMood('surprised', 2.5); if (!threat.dataset.warned) { threat.dataset.warned = 1; ui.say(L(EXTRA.threatHi), { temp: true }); } }
+    else if (v > 0.6) guide.setMood('worried', 2); else if (v > 0.3) guide.setMood('focused', 2);
+  });
+  // arena: Balloon Rush
+  const hud = $('#game-hud'), gS = $('#g-score'), gT = $('#g-time'), best = $('#best');
+  let bestScore = 0; try { bestScore = +localStorage.getItem('adham-balloon-best') || 0; } catch (e) {}
+  const showBest = () => { best.textContent = bestScore ? `Best: ${bestScore}` : ''; }; showBest();
+  $('#play').addEventListener('click', () => {
+    if (world.game.active) return;
+    goTo(5); world.game.start(15); hud.hidden = false; guide.setMood('excited', 16); ui.say(L(EXTRA.gameStart), { temp: true }); sound.play('whoosh');
+  });
+  world.game.onTick = (g) => { gS.textContent = g.score; gT.textContent = Math.max(0, Math.ceil(g.left)); };
+  world.game.onEnd = (g) => {
+    hud.hidden = true; if (g.score > bestScore) { bestScore = g.score; try { localStorage.setItem('adham-balloon-best', bestScore); } catch (e) {} } showBest();
+    ui.say(EXTRA.gameEnd[lang](g.score), { temp: true, hold: 5000 }); guide.setMood(g.score >= 8 ? 'cool' : 'happy', 4); guide.setMode('celebrate');
+    if (g.score >= 8) artifacts.unlock('popper');
+  };
+  artifacts.onUnlock((a, n, total) => { guide.setMood('love', 2.5); sound.play('arrive'); if (n === total) setTimeout(() => ui.say(L(EXTRA.allArtifacts), { temp: true, hold: 6000 }), 1500); });
 
   const rt = new THREE.WebGLRenderTarget(innerWidth * dpr, innerHeight * dpr, { type: THREE.HalfFloatType, samples: 4 });
   const composer = new EffectComposer(renderer, rt);
@@ -148,17 +193,27 @@ async function start() {
   canvas.addEventListener('pointerdown', (e) => {
     const m = new THREE.Vector2((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
     ray.setFromCamera(m, camera);
-    if (ray.intersectObject(guide.root, true).length) { guide.poke(); sound.play('poke'); const pool = POKES[lang]; ui.say(pool[(Math.random() * pool.length) | 0], { temp: true }); return; }
+    if (ray.intersectObject(guide.root, true).length) {
+      guide.poke(); sound.play('poke');
+      const now = performance.now(); pokes = pokes.filter((x) => now - x < 6000); pokes.push(now);
+      const n = pokes.length; if (n >= 5) artifacts.unlock('poker');
+      if (n >= 7) { guide.setMood('dizzy', 3); ui.say(L(EXTRA.annoyed), { temp: true }); }
+      else if (n >= 5) { guide.setMood('annoyed', 3); ui.say(L(EXTRA.annoyed), { temp: true }); }
+      else if (n >= 3) { guide.setMood('shy', 3); ui.say(L(EXTRA.shy), { temp: true }); }
+      else { guide.setMood('surprised', 1.4); const pool = POKES[lang]; ui.say(pool[(Math.random() * pool.length) | 0], { temp: true }); }
+      return;
+    }
     const hit = ray.intersectObjects(world.clickables, false)[0];
     if (!hit) return;
     const o = hit.object, kind = o.userData.onClick;
+    if (kind === 'gameBalloon') { if (world.game.hit(o)) sound.play('pop'); return; }
     if (kind === 'balloon') {
       const b = o.userData.group; if (b.userData.popped) return; b.userData.popped = true; sound.play('pop');
       gsap.to(o.scale, { x: 1.5, y: 1.7, z: 1.5, duration: 0.08, onComplete: () => { o.visible = false; } });
       ui.say(CLICKS.balloon[lang], { temp: true });
       setTimeout(() => { o.visible = true; o.scale.set(0.01, 0.01, 0.01); gsap.to(o.scale, { x: 1, y: 1.18, z: 1, duration: 0.8, ease: 'elastic.out(1,.5)' }); b.userData.popped = false; }, 5000);
     } else if (kind === 'rocket') { world.props.rocket.userData.boost = 1; sound.play('whoosh'); ui.say(CLICKS.rocket[lang], { temp: true }); }
-    else if (kind === 'moon') { ui.say(CLICKS.moon[lang], { temp: true }); sound.play('arrive'); }
+    else if (kind === 'moon') { ui.say(CLICKS.moon[lang], { temp: true }); sound.play('arrive'); artifacts.unlock('moonwalker'); guide.setMood('surprised', 2); }
     else if (kind === 'cap') { fireBeam(); ui.say(CLICKS.cap[lang], { temp: true }); }
   });
   // pointer cursor over the guide (cheap: test every few frames)
@@ -175,7 +230,11 @@ async function start() {
     p.rings.forEach((r, i) => gsap.fromTo(r.scale, { x: 1, y: 1, z: 1 }, { x: 9, y: 9, z: 9, duration: 2.2, delay: i * 0.3, ease: 'power2.out' }));
     p.rings.forEach((r, i) => gsap.fromTo(r.material, { opacity: 1 }, { opacity: 0, duration: 2.2, delay: i * 0.3 }));
   }
-  ui.onSend = () => { fireBeam(); ui.say(SENT[lang], { temp: true }); };
+  ui.onSend = () => { fireBeam(); ui.say(SENT[lang], { temp: true, hold: 5000 }); guide.setMood('love', 6); artifacts.unlock('hired'); };
+  ui.onTerm = () => { guide.setMood('focused', 6); artifacts.unlock('root'); };
+  ui.onLangSet = () => { if (lang === 'ar') artifacts.unlock('polyglot'); };
+  ui.onSound = (on) => { if (on) artifacts.unlock('dj'); };
+  ui.setMood = (m) => { if (MOODS[m]) { guide.setMood(m, 8); return true; } return false; };
   ui.onLang = () => { lastSpoken = -1; };
   ui.onPoke = () => { guide.poke(); sound.play('poke'); };
 
@@ -223,6 +282,11 @@ async function start() {
     const u = THREE.MathUtils.clamp(qS / (N - 1), 0, 1);
     posCurve.getPoint(u, camera.position); tgtCurve.getPoint(u, look);
     if (intro.k > 0) camera.position.lerp(introFrom, intro.k * intro.k);
+    if (focus) {
+      if (Math.abs(qS - focus.q) > 0.25) focus.out = true;
+      focus.k += ((focus.out ? 0 : 1) - focus.k) * Math.min(1, dt * 3); if (focus.out && focus.k < 0.01) focus = null;
+      if (focus) { const e = focus.k * focus.k * (3 - 2 * focus.k); camera.position.lerp(focus.pos, e); look.lerp(focus.tgt, e); }
+    }
     camera.position.x += mouse.x * 0.35; camera.position.y += mouse.y * 0.2;
     camera.lookAt(look);
     // compose: push the subject away from the panel
@@ -236,14 +300,21 @@ async function start() {
     const near = Math.round(qS);
     if (Math.abs(qS - near) < 0.02) settleT += snap ? 1 : dt; else settleT = 0;
     if (settleT > 0.25 && lastSpoken !== near) {
-      lastSpoken = near; ui.lines(LINES[lang][near]); guide.setMode(MODES[near]); sound.play('arrive');
+      lastSpoken = near; ui.lines(LINES[lang][near]); guide.setMode(MODES[near]); sound.play('arrive'); guide.setMood(MOOD_BY_LEVEL[near]); if (near >= 1) artifacts.unlock('first-step'); if (near === N - 1) artifacts.unlock('summit');
     }
     if (Math.abs(qS - lastSpoken) > 0.18 && lastSpoken !== -1) { lastSpoken = -1; ui.hide(); if (guide.st.mode !== 'celebrate') guide.setMode('idle'); }
     if (near !== curLevel) { curLevel = near; ui.level(near); ui.avoid(sections[near]); }
 
     world.packetBoost = Math.max(world.packetBoost, Math.min(1, Math.abs(lenis.velocity || 0) / 60));
     world.update(t, dt, camera);
-    guide.update(dt, t);
+    const idle = (performance.now() - lastInput) / 1000, vel = Math.abs(lenis.velocity || 0);
+    const sleepy = idle > 25 && !world.game.active;
+    if (wasSleepy && !sleepy) { guide.setMood('surprised', 1.6); ui.say(L(EXTRA.wake), { temp: true }); }
+    wasSleepy = sleepy;
+    if (vel > 110 && guide.st.mood !== 'dizzy') ui.say(L(EXTRA.dizzy), { temp: true });
+    guide.st.music = sound.on;
+    guide.update(dt, t, { sleepy, dizzy: vel > 110, busy: moved > 0.004 });
+    ui.moodChip(guide.st.mood, MOODS[guide.st.mood].aura);
 
     // bubble follows the head
     const head = guide.headAnchor(); tmp.copy(head).project(camera);
@@ -263,6 +334,7 @@ async function start() {
     if (!perfChecked && frames > 30) { slowAcc += dt; if (frames > 120) { perfChecked = true; const avg = slowAcc / 90; if (avg > 0.028 && gtao) { gtao.enabled = false; } if (avg > 0.034) { dpr = 1; renderer.setPixelRatio(1); resize(); if (avg > 0.05) { useComposer = false; renderer.shadowMap.enabled = false; } } } }
   }
   gsap.ticker.add(frame);
+  if (location.hash.startsWith('#hq')) window.__game = world.game;
   if (location.hash === '#debug') window.__dbg = () => ({ qS, q: scrollQ(), lastSpoken, settleT, mode: guide.st.mode, speed: guide.st.speed, pos: guide.root.position.toArray().map((n) => +n.toFixed(2)), scroll: lenis.scroll, bounds });
 
   // ---------- reveal ----------
@@ -321,11 +393,11 @@ function setupUI() {
   bubble.addEventListener('click', (e) => { if (e.target === bubble || e.target === text) { clearTimeout(tempT); advance(); } });
 
   api.lines = (arr) => { clearTimeout(tempT); queue = arr; idx = 0; typeLine(arr[0]); };
-  api.say = (s, { temp } = {}) => {
+  api.say = (s, { temp, hold = 3200 } = {}) => {
     const resume = queue.slice(); const at = idx;
     typeLine(s);
     clearTimeout(tempT);
-    if (temp && resume.length) tempT = setTimeout(() => { queue = resume; idx = at; typeLine(queue[idx]); }, 3200);
+    if (temp && resume.length) tempT = setTimeout(() => { queue = resume; idx = at; typeLine(queue[idx]); }, hold);
   };
   api.hide = () => { clearTimeout(autoT); if (!visible) return; visible = false; talking = false; if (typing) typing.kill(); gsap.to(bubble, { scale: 0.7, opacity: 0, duration: 0.2, onComplete: () => { if (!visible) bubble.hidden = true; } }); };
   api.talking = () => talking;
@@ -368,23 +440,45 @@ function setupUI() {
   // language
   const langBtn = $('#lang');
   const syncLang = () => { langBtn.textContent = lang === 'ar' ? 'EN' : 'ع'; langBtn.setAttribute('aria-label', lang === 'ar' ? 'Switch the guide to English' : 'Switch the guide to Egyptian Arabic'); document.documentElement.classList.toggle('ar', lang === 'ar'); };
-  langBtn.addEventListener('click', () => { lang = lang === 'ar' ? 'en' : 'ar'; try { localStorage.setItem('adham-guide-lang', lang); } catch (e) {} syncLang(); api.onLang && api.onLang(); });
+  langBtn.addEventListener('click', () => { lang = lang === 'ar' ? 'en' : 'ar'; try { localStorage.setItem('adham-guide-lang', lang); } catch (e) {} syncLang(); api.onLang && api.onLang(); api.onLangSet && api.onLangSet(); });
   syncLang();
 
   // contact request composer
-  const f = { name: $('#f-name'), role: $('#f-role'), msg: $('#f-msg') }, pre = $('#req-preview'), status = $('#req-status');
+  const f = { name: $('#f-name'), email: $('#f-email'), role: $('#f-role'), msg: $('#f-msg') }, pre = $('#req-preview'), status = $('#req-status');
   const esc = (s) => JSON.stringify(s);
-  const render = () => { pre.textContent = `POST /api/hire HTTP/1.1\nHost: adham107harp.github.io\nContent-Type: application/json\n\n{\n  "from": ${esc(f.name.value || 'you')},\n  "about": ${esc(f.role.value || 'an opportunity')},\n  "message": ${esc((f.msg.value || '…').slice(0, 140))}\n}`; };
-  Object.values(f).forEach((i) => i.addEventListener('input', render)); render();
   const EMAIL = 'adhamharp994@gmail.com';
-  $('#req').addEventListener('submit', (e) => {
-    e.preventDefault();
-    if (!f.msg.value.trim()) { status.textContent = '400 Bad Request: the message is empty.'; f.msg.focus(); return; }
-    const subject = `${f.role.value || 'Hello'} — from ${f.name.value || 'your portfolio'}`;
-    const href = `mailto:${EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(f.msg.value)}`;
-    status.textContent = `201 Created. Your mail app should open; if it doesn't, write to ${EMAIL}.`;
-    api.onSend && api.onSend();
-    setTimeout(() => { location.href = href; }, 900);
+  // Messages are delivered by FormSubmit (formsubmit.co), a free form-to-email relay for static sites.
+  const ENDPOINT = `https://formsubmit.co/ajax/${EMAIL}`;
+  const reqText = () => `POST /api/hire HTTP/1.1\nHost: adham107harp.github.io\nContent-Type: application/json\n\n{\n  "from": ${esc(f.name.value || 'you')},\n  "replyTo": ${esc(f.email.value || 'you@company.com')},\n  "about": ${esc(f.role.value || 'an opportunity')},\n  "message": ${esc((f.msg.value || '…').slice(0, 140))}\n}`;
+  const render = () => { pre.textContent = reqText(); };
+  Object.values(f).forEach((i) => i.addEventListener('input', render)); render();
+  let sending = false;
+  $('#req').addEventListener('submit', async (e) => {
+    e.preventDefault(); if (sending) return;
+    const bad = !f.name.value.trim() ? f.name : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.value.trim()) ? f.email : !f.msg.value.trim() ? f.msg : null;
+    if (bad) { status.textContent = `400 Bad Request: ${bad === f.email ? 'that email doesn\'t look right' : `the ${bad.name === 'msg' ? 'message' : bad.name} is empty`}.`; bad.focus(); api.mood && api.mood('worried'); return; }
+    if ($('#req .hp').value) return; // bot
+    sending = true; const btn = $('#send-btn'); btn.disabled = true; btn.textContent = 'Sending…';
+    const t0 = performance.now();
+    pre.textContent = reqText() + '\n\n… awaiting response';
+    try {
+      const r = await fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({
+        name: f.name.value.trim(), email: f.email.value.trim(), topic: f.role.value.trim() || '(none)', message: f.msg.value.trim(),
+        _subject: `Portfolio: ${f.role.value.trim() || 'new message'} from ${f.name.value.trim()}`, _template: 'table', _captcha: 'false', _replyto: f.email.value.trim(),
+      }) });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok || String(data.success) !== 'true') throw new Error(data.message || r.status);
+      const ms = Math.round(performance.now() - t0);
+      pre.textContent = reqText() + `\n\nHTTP/1.1 201 Created  (${ms} ms)\n{ "delivered": true, "to": "Adham's inbox" }`;
+      status.textContent = '201 Created. Delivered to my inbox. I\'ll reply to your email.';
+      api.onSend && api.onSend(); f.msg.value = '';
+    } catch (err) {
+      const href = `mailto:${EMAIL}?subject=${encodeURIComponent(`Portfolio: ${f.role.value || 'Hello'}`)}&body=${encodeURIComponent(f.msg.value)}`;
+      pre.textContent = reqText() + '\n\nHTTP/1.1 503 Service Unavailable\n{ "fallback": "email" }';
+      status.innerHTML = ''; status.append('The relay didn\'t answer. ');
+      const a = document.createElement('a'); a.href = href; a.textContent = `Email me at ${EMAIL}`; status.append(a, ' instead.');
+      api.mood && api.mood('worried');
+    } finally { sending = false; btn.disabled = false; btn.textContent = 'Send request'; }
   });
   $('#copy-mail').addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(EMAIL); status.textContent = `Copied ${EMAIL}`; } catch (e) { status.textContent = EMAIL; }
@@ -395,7 +489,9 @@ function setupUI() {
   const print = (s, cls = '') => { const d = document.createElement('div'); if (cls) d.className = cls; d.textContent = s; out.appendChild(d); out.scrollTop = out.scrollHeight; };
   const sectionsByName = { home: 0, hero: 0, about: 1, stack: 2, work: 3, projects: 3, research: 4, arena: 5, contact: 6 };
   const cmds = {
-    help: () => 'commands: whoami · ls · cat about · projects · research · arena · contact · goto <section> · lang ar|en · poke · sudo hire adham · clear · exit',
+    artifacts: () => { openArt(); return 'opening the artifact case…'; },
+    moods: () => 'moods: happy excited focused thinking cool surprised shy annoyed sleepy dizzy love worried vibing · try: mood cool',
+    help: () => 'commands: moods · mood <name> · artifacts · whoami · ls · cat about · projects · research · arena · contact · goto <section> · lang ar|en · poke · sudo hire adham · clear · exit',
     whoami: () => 'Adham Harp — AI & Data Science student @ Badya University, backend developer (Node.js, PostgreSQL, C++).',
     ls: () => 'about/  stack/  work/  research/  arena/  contact/  capstone.gold',
     'cat about': () => 'Backend first, AI on top. Builds APIs, databases and the logic behind products. Class of 2028.',
@@ -412,12 +508,13 @@ function setupUI() {
     const c = raw.trim().replace(/\s+/g, ' ').toLowerCase(); if (!c) return;
     print(`$ ${raw}`, 'c');
     if (c.startsWith('goto ')) { const k = sectionsByName[c.slice(5)]; if (k === undefined) return print(`no such section: ${c.slice(5)}`, 'e'); closeTerm(); goTo(k); return; }
+    if (c.startsWith('mood ')) { const m = c.slice(5); return print(api.setMood && api.setMood(m) ? `mini-Adham is now ${m}.` : `unknown mood: ${m}. try "moods".`, api.setMood && MOODS[m] ? '' : 'e'); }
     if (c.startsWith('lang ')) { const l = c.slice(5); if (l !== 'ar' && l !== 'en') return print('lang ar | lang en', 'e'); lang = l; try { localStorage.setItem('adham-guide-lang', lang); } catch (e) {} syncLang(); api.onLang && api.onLang(); return print(`guide speaks ${l === 'ar' ? 'Egyptian Arabic' : 'English'} now.`); }
     if (c === 'sudo rm -rf /') return print('nice try. the pyramid has stood for 4,600 years.', 'e');
     const fn = cmds[c]; if (!fn) return print(`command not found: ${c}. try "help".`, 'e');
     const r = fn(); if (r) print(r);
   }
-  function openTerm() { term.hidden = false; if (!out.textContent) print('Welcome to adham@saqqara. Type "help".'); setTimeout(() => input.focus(), 30); lenis.stop(); }
+  function openTerm() { api.onTerm && api.onTerm(); term.hidden = false; if (!out.textContent) print('Welcome to adham@saqqara. Type "help".'); setTimeout(() => input.focus(), 30); lenis.stop(); }
   function closeTerm() { term.hidden = true; lenis.start(); $('#term-btn').focus(); }
   $('#term-btn').addEventListener('click', openTerm);
   $('#term-close').addEventListener('click', closeTerm);
@@ -426,7 +523,7 @@ function setupUI() {
   // sound toggle
   const sBtn = $('#sound');
   const syncSound = () => { sBtn.setAttribute('aria-pressed', String(sound.on)); sBtn.title = sound.on ? 'Sound on' : 'Sound off'; sBtn.classList.toggle('on', sound.on); };
-  sBtn.addEventListener('click', () => { sound.toggle(); syncSound(); try { localStorage.setItem('adham-sound', sound.on ? '1' : '0'); } catch (e) {} });
+  sBtn.addEventListener('click', () => { sound.toggle(); syncSound(); api.onSound && api.onSound(sound.on); try { localStorage.setItem('adham-sound', sound.on ? '1' : '0'); } catch (e) {} });
   document.addEventListener('visibilitychange', () => sound.pause(document.hidden));
   syncSound();
 
@@ -440,6 +537,58 @@ function setupUI() {
     if (e.key === 'Escape' && !term.hidden) closeTerm();
     else if ((e.key === '`' || e.key === '~') && !typingField) { e.preventDefault(); term.hidden ? openTerm() : closeTerm(); }
   });
+
+  // mood chip under the minimap
+  const moodChip = $('#mood-chip'); let lastMood = '';
+  api.moodChip = (m, hex) => { if (m === lastMood) return; lastMood = m; moodChip.querySelector('span').textContent = `mood: ${m}`; const c = '#' + hex.toString(16).padStart(6, '0'); moodChip.querySelector('i').style.background = c; moodChip.querySelector('i').style.boxShadow = `0 0 10px ${c}`; };
+
+  // artifacts: counter, toasts, panel
+  const artBtn = $('#art-btn'), artCount = $('#art-count'), artPanel = $('#art-panel'), artList = $('#art-list'), toasts = $('#toasts');
+  const drawArt = () => {
+    artCount.textContent = artifacts.count(); $('#art-of').textContent = `${artifacts.count()}/${artifacts.list.length}`;
+    artList.innerHTML = artifacts.list.map((a) => `<li class="${artifacts.has(a.id) ? 'got' : ''}"><span class="ic">${a.icon}</span><div><b>${artifacts.has(a.id) ? a.name : '???'}</b><span>${a.hint}</span></div></li>`).join('');
+  };
+  function openArt() { drawArt(); artPanel.hidden = false; lenis.stop(); }
+  const closeArt = () => { artPanel.hidden = true; lenis.start(); };
+  artBtn.addEventListener('click', openArt); $('#art-close').addEventListener('click', closeArt);
+  artPanel.addEventListener('click', (e) => { if (e.target === artPanel) closeArt(); });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && !artPanel.hidden) closeArt(); });
+  artifacts.onUnlock((a, n, total) => {
+    drawArt(); artBtn.classList.remove('bump'); void artBtn.offsetWidth; artBtn.classList.add('bump');
+    const t = document.createElement('div'); t.className = 'toast';
+    const ic = document.createElement('span'); ic.className = 'ic'; ic.textContent = a.icon;
+    const tx = document.createElement('div'); tx.innerHTML = `<small>Artifact ${n}/${total} unlocked</small>`; const b = document.createElement('b'); b.textContent = a.name; tx.append(b);
+    t.append(ic, tx); toasts.append(t);
+    gsap.fromTo(t, { x: -40, opacity: 0 }, { x: 0, opacity: 1, duration: 0.5, ease: 'back.out(2)' });
+    gsap.to(t, { opacity: 0, y: 10, delay: 3.6, duration: 0.5, onComplete: () => t.remove() });
+  });
+  drawArt();
+
+  // logos: drop any icon that fails to load (offline or blocked)
+  document.querySelectorAll('img.lg').forEach((i) => { const kill = () => i.remove(); if (i.complete && !i.naturalWidth) kill(); else i.addEventListener('error', kill); });
+
+  if (!reduced) {
+    // custom cursor
+    const cur = $('#cursor'), dot = cur.querySelector('.c-dot'), ring = cur.querySelector('.c-ring'); let cx = innerWidth / 2, cy = innerHeight / 2, rx = cx, ry = cy;
+    addEventListener('pointermove', (e) => { cx = e.clientX; cy = e.clientY; cur.classList.toggle('hot', !!e.target.closest('a,button,input,textarea,label,[data-go]') || document.body.style.cursor === 'pointer' || canvasHot()); });
+    const canvasHot = () => $('#scene') && $('#scene').style.cursor === 'pointer';
+    gsap.ticker.add(() => { rx += (cx - rx) * 0.2; ry += (cy - ry) * 0.2; dot.style.transform = `translate(${cx}px,${cy}px)`; ring.style.transform = `translate(${rx}px,${ry}px)`; });
+    // magnetic buttons
+    document.querySelectorAll('.mag').forEach((b) => {
+      b.addEventListener('pointermove', (e) => { const r = b.getBoundingClientRect(); gsap.to(b, { x: (e.clientX - r.left - r.width / 2) * 0.25, y: (e.clientY - r.top - r.height / 2) * 0.35, duration: 0.3 }); });
+      b.addEventListener('pointerleave', () => gsap.to(b, { x: 0, y: 0, duration: 0.6, ease: 'elastic.out(1,.4)' }));
+    });
+    // 3D tilt + glare on cards
+    document.querySelectorAll('.tilt').forEach((el) => {
+      el.addEventListener('pointermove', (e) => { if (innerWidth <= 820) return; const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height; el.style.transform = `perspective(900px) rotateX(${(0.5 - y) * 5}deg) rotateY(${(x - 0.5) * 6}deg)`; el.style.setProperty('--gx', `${x * 100}%`); el.style.setProperty('--gy', `${y * 100}%`); });
+      el.addEventListener('pointerleave', () => { el.style.transform = ''; });
+    });
+    // count-up numbers
+    document.querySelectorAll('[data-count]').forEach((el) => {
+      const end = +el.dataset.count, suf = el.dataset.suffix || '', from = end > 1000 ? end - 30 : 0, o = { v: from };
+      ScrollTrigger.create({ trigger: el, start: 'top 90%', once: true, onEnter: () => gsap.to(o, { v: end, duration: 1.6, ease: 'power2.out', onUpdate: () => (el.textContent = Math.round(o.v) + suf) }) });
+    });
+  }
 
   return api;
 }

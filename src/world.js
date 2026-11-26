@@ -311,15 +311,21 @@ function buildProps(world, pyr, lm) {
     items.forEach((s, i) => {
       const m = new THREE.Mesh(new THREE.PlaneGeometry(1.05, 0.33), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(textCanvas(s, { font: '700 54px Unbounded, sans-serif' })), transparent: true, side: THREE.DoubleSide, toneMapped: false }));
       m.material.map.colorSpace = THREE.SRGBColorSpace;
-      m.userData = { a: (i / items.length) * Math.PI * 2, r: i % 2 ? 2.9 : 2.2, y: (i % 3) * 0.45 - 0.45 };
+      m.userData = { a: (i / items.length) * Math.PI * 2, r: i % 2 ? 2.9 : 2.2, y: (i % 3) * 0.45 - 0.45, label: s.toLowerCase(), hl: 0 };
       g.add(m);
     });
     const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 0), new THREE.MeshPhysicalMaterial({ color: 0x2fd3c6, roughness: 0.05, transmission: 0.6, thickness: 0.6, emissive: new THREE.Color(0x0d6d66), emissiveIntensity: 1.5 })); g.add(core);
     up((t, dt, cam) => {
       core.rotation.set(t * 0.6, t * 0.9, 0);
-      g.children.forEach((m) => { if (!m.userData.r) return; const a = m.userData.a + t * 0.35; m.position.set(Math.cos(a) * m.userData.r, m.userData.y + Math.sin(t + m.userData.a) * 0.12, Math.sin(a) * m.userData.r); if (cam) m.quaternion.copy(cam.quaternion); });
+      g.children.forEach((m) => {
+        if (!m.userData.r) return; const u = m.userData; u.hl = Math.max(0, u.hl - dt);
+        const k = Math.min(1, u.hl * 2), a = u.a + t * 0.35;
+        m.position.set(Math.cos(a) * u.r * (1 - k * 0.6), u.y + Math.sin(t + u.a) * 0.12 + k * 0.9, Math.sin(a) * u.r * (1 - k * 0.6) + k * 1.2);
+        m.scale.setScalar(1 + k * 0.9); if (cam) m.quaternion.copy(cam.quaternion);
+      });
     });
     world.props.stack = g;
+    world.highlightSkill = (name) => { let hit = false; g.children.forEach((m) => { if (m.userData.label && name.toLowerCase().startsWith(m.userData.label.replace('.js', ''))) { m.userData.hl = 3; hit = true; } }); return hit; };
   }
 
   // L3 — work: floating screens with real screenshots
@@ -330,6 +336,7 @@ function buildProps(world, pyr, lm) {
     shots.forEach((s, i) => {
       const t = s.canvas ? new THREE.CanvasTexture(s.canvas) : texLoader.load(s.src); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
       const holder = new THREE.Group(); holder.position.set(s.x, i === 1 ? 0.35 : 0, i === 1 ? -0.4 : 0); holder.rotation.y = s.ry; g.add(holder);
+      (world.props.screens ||= {})[['capcom', 'smarthabbit', 'labtrack'][i]] = holder;
       const f = new THREE.Mesh(new RoundedBoxGeometry(1.86, 1.1, 0.06, 2, 0.03), gold); f.castShadow = true; holder.add(f);
       const p = new THREE.Mesh(new THREE.PlaneGeometry(1.74, 0.98), new THREE.MeshBasicMaterial({ map: t, color: 0xb8b8b8 })); p.position.z = 0.035; holder.add(p);
       const ph = i * 1.7; up((tt) => { holder.position.y = (i === 1 ? 0.35 : 0) + Math.sin(tt * 1.1 + ph) * 0.08; });
@@ -339,7 +346,7 @@ function buildProps(world, pyr, lm) {
 
   // L4 — research: the dual pipeline as a hologram
   {
-    const g = new THREE.Group(); g.position.set(5.6, levelY(4) + 1.3, ledgeZ(4) - 0.4); g.rotation.y = -0.4; pyr.add(g);
+    const g = new THREE.Group(); g.position.set(6.7, levelY(4) + 1.3, ledgeZ(4) - 0.6); g.rotation.y = -0.5; pyr.add(g);
     const nodeA = new THREE.Mesh(new RoundedBoxGeometry(0.5, 0.5, 0.5, 2, 0.06), glow(PAL.faience, 2)); nodeA.position.set(-1.9, 1.7, 0);
     const nodeB = new THREE.Mesh(new THREE.SphereGeometry(0.3, 24, 16), glow(0x6f8cff, 2.2)); nodeB.position.set(-1.9, 0.3, 0);
     const fuse = new THREE.Mesh(new THREE.OctahedronGeometry(0.38), glow(PAL.gold, 2.6)); fuse.position.set(0.4, 1.0, 0);
@@ -360,16 +367,20 @@ function buildProps(world, pyr, lm) {
     const disc = new THREE.Mesh(new THREE.RingGeometry(0.2, 2.6, 64), new THREE.MeshBasicMaterial({ color: new THREE.Color(PAL.faience).multiplyScalar(0.6), transparent: true, opacity: 0.18, side: THREE.DoubleSide, toneMapped: false, depthWrite: false }));
     disc.rotation.x = -Math.PI / 2; disc.position.set(0, -1.25, 0); g.add(disc);
     const m = new THREE.Matrix4(), v = new THREE.Vector3();
-    up((t) => {
+    g.userData.threat = 0; let th = 0, phase = 0; const calm = new THREE.Color(0x8fa6ff).multiplyScalar(3), hot = new THREE.Color(0xff3b3b).multiplyScalar(3.4), fuseCalm = new THREE.Color(PAL.gold).multiplyScalar(2.6);
+    up((t, dt) => {
+      th += (g.userData.threat - th) * Math.min(1, dt * 4); phase += dt * (0.22 + th * 0.6);
+      pb.material.color.copy(calm).lerp(hot, th); nodeB.material.color.copy(calm).lerp(hot, th); nodeB.scale.setScalar(1 + th * 0.5 + Math.sin(t * 12) * 0.1 * th);
+      fuse.material.color.copy(fuseCalm).lerp(hot, th * 0.7);
       nodeA.rotation.set(t, t * 0.7, 0); fuse.rotation.y = t * 1.4; fuse.scale.setScalar(1 + Math.sin(t * 4) * 0.06);
       for (let i = 0; i < n; i++) {
         const u = (i / n + t * 0.22) % 1;
         cA.getPointAt(u, v); m.makeTranslation(v.x, v.y, v.z); pa.setMatrixAt(i, m);
-        cB.getPointAt((u + 0.5) % 1, v); m.makeTranslation(v.x, v.y, v.z); pb.setMatrixAt(i, m);
+        cB.getPointAt((i / n + phase) % 1, v); m.makeTranslation(v.x, v.y, v.z); pb.setMatrixAt(i, m);
         out.getPointAt(u, v); m.makeTranslation(v.x, v.y, v.z); po.setMatrixAt(i, m);
       }
       pa.instanceMatrix.needsUpdate = pb.instanceMatrix.needsUpdate = po.instanceMatrix.needsUpdate = true;
-      bars.forEach((b, i) => (b.scale.y = 0.85 + Math.sin(t * 2 + i) * 0.15));
+      bars.forEach((b, i) => { const on = th > i * 0.25 - 0.01; b.scale.y += ((on ? 1 + th * 0.6 : 0.25) + Math.sin(t * 2 + i) * 0.06 - b.scale.y) * 0.1; });
       disc.rotation.z = t * 0.2;
     });
     world.props.research = g;
@@ -406,6 +417,24 @@ function buildProps(world, pyr, lm) {
       flame.scale.y = 1 + Math.sin(t * 30) * 0.2 + rocket.userData.boost * 2;
     });
     world.props.arena = g;
+
+    // Balloon Rush mini-game: balloons rise past the arena ledge, click to pop
+    const pool = [], gameCols = [0xe0473a, 0x2fd3c6, 0xe9b44c, 0x6f8cff, 0xb48cff, 0xf6ead2, 0x52d273];
+    const center = new THREE.Vector3(-2.9, levelY(5), ledgeZ(5) + 0.6);
+    for (let i = 0; i < 14; i++) {
+      const b = new THREE.Mesh(new THREE.SphereGeometry(0.3, 24, 18), new THREE.MeshPhysicalMaterial({ color: gameCols[i % gameCols.length], roughness: 0.25, clearcoat: 1, sheen: 0.4 }));
+      b.scale.y = 1.18; b.visible = false; b.userData.onClick = 'gameBalloon'; pyr.add(b); pool.push(b); world.clickables.push(b);
+    }
+    const game = world.game = { active: false, score: 0, left: 0, best: 0, onEnd: null, onTick: null };
+    const spawn = (b) => { b.position.set(center.x + (Math.random() - 0.5) * 6, center.y - 1.5 - Math.random() * 3, center.z + 1 + Math.random() * 2.5); b.userData.v = 0.9 + Math.random() * 1.4; b.userData.w = Math.random() * 6; b.visible = true; b.scale.set(1, 1.18, 1); };
+    game.start = (sec = 15) => { game.active = true; game.score = 0; game.left = sec; pool.forEach((b, i) => { spawn(b); b.position.y -= i * 0.5; }); };
+    game.hit = (b) => { if (!game.active || !b.visible) return false; game.score++; b.visible = false; setTimeout(() => game.active && spawn(b), 350); return true; };
+    up((t, dt) => {
+      if (!game.active) return;
+      game.left -= dt; game.onTick && game.onTick(game);
+      for (const b of pool) { if (!b.visible) continue; b.position.y += b.userData.v * dt; b.position.x += Math.sin(t * 1.5 + b.userData.w) * dt * 0.3; if (b.position.y > center.y + 7) spawn(b); }
+      if (game.left <= 0) { game.active = false; pool.forEach((b) => (b.visible = false)); game.best = Math.max(game.best, game.score); game.onEnd && game.onEnd(game); }
+    });
   }
 
   // L6 — the beam the capstone fires when a request is sent

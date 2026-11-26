@@ -25,8 +25,8 @@
 <body>
 <canvas id="scene" aria-hidden="true"></canvas>
 <div id="fallback" aria-hidden="true"></div>
+<div id="cursor" aria-hidden="true"><i class="c-dot"></i><i class="c-ring"></i></div>
 
-<!-- loader -->
 <div id="loader" role="status" aria-live="polite">
   <svg viewBox="0 0 220 130" class="ld-pyr" aria-hidden="true">
     <rect class="ld-s" x="10" y="108" width="200" height="18"/>
@@ -39,7 +39,6 @@
   <p class="ld-txt">Laying the stones <span id="ld-pct">0%</span></p>
 </div>
 
-<!-- top bar -->
 <header class="bar">
   <a href="#hero" class="brand" data-go="0" aria-label="Back to top">
     <svg viewBox="0 0 64 30" aria-hidden="true"><rect x="2" y="2" width="60" height="26" rx="13"/><line x1="62" y1="6" x2="62" y2="24"/></svg>
@@ -54,6 +53,7 @@
     <a href="#contact" data-go="6">Contact</a>
   </nav>
   <div class="tools">
+    <button id="art-btn" class="chip-btn art" aria-label="Artifacts collected" title="Hidden artifacts"><span class="gl">𓋹</span> <b id="art-count">0</b>/10</button>
     <button id="sound" class="chip-btn icon" aria-label="Sound" aria-pressed="false" title="Sound off">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path class="spk" d="M4 9h4l5-4v14l-5-4H4z"/><path class="w1" d="M16 9.5a3.5 3.5 0 0 1 0 5"/><path class="w2" d="M18.5 7a7 7 0 0 1 0 10"/><path class="x" d="M16 9l5 6M21 9l-5 6"/></svg>
     </button>
@@ -62,65 +62,97 @@
   </div>
 </header>
 
-<!-- side mini pyramid -->
 <nav class="minimap" aria-label="Pyramid levels">
   <svg viewBox="0 0 90 150" id="mini" aria-hidden="true"></svg>
   <p id="mini-label">Ground</p>
+  <p id="mood-chip" aria-live="polite"><i></i><span>happy</span></p>
 </nav>
 
-<!-- speech bubble of mini-Adham -->
 <div id="bubble" aria-live="polite" hidden>
   <p id="bubble-text"></p>
   <button id="bubble-next" aria-label="Next line">›</button>
 </div>
-<div id="poke-hint">Click mini-Adham</div>
+<div id="poke-hint">Poke me</div>
+<div id="game-hud" hidden><span>Balloon Rush</span><b id="g-score">0</b><small>popped</small><b id="g-time">15</b><small>s</small></div>
+<div id="toasts" aria-live="polite"></div>
 
 <main id="content">
 
 <section id="hero" class="sec" data-side="left">
   <div class="panel hero-panel">
-    <p class="kicker">AI &amp; Data Science · Badya University · Egypt</p>
+    <p class="kicker">Backend developer · AI &amp; Data Science @ Badya University</p>
     <h1 id="name" aria-label="Adham Harp">Adham Harp</h1>
-    <p class="lead">Backend developer. I build the APIs, databases and data logic behind products, and I test them until they hold. This page is a step pyramid: every step is one layer of what I do.</p>
+    <p class="lead">I build the part of a product nobody sees and everybody depends on: <b>APIs that answer</b>, <b>databases that don't lose data</b>, and <b>real-time systems that stay up</b>. Then I test them until they stop breaking.</p>
+    <p class="lead2">This site is a step pyramid. Every step is one layer of my stack. Climb it.</p>
     <div class="cta">
-      <a class="btn gold" href="#about" data-go="1">Climb the stack</a>
-      <a class="btn" href="https://github.com/adham107harp" target="_blank" rel="noopener">GitHub</a>
-      <a class="btn" href="https://www.linkedin.com/in/adham-harp-43bb6232b" target="_blank" rel="noopener">LinkedIn</a>
+      <a class="btn gold mag" href="#about" data-go="1">Start climbing ↓</a>
+      <a class="btn mag" href="https://github.com/adham107harp" target="_blank" rel="noopener"><img class="lg" src="https://cdn.simpleicons.org/github/f6ead2" alt="" width="16" height="16">GitHub</a>
+      <a class="btn mag" href="https://www.linkedin.com/in/adham-harp-43bb6232b" target="_blank" rel="noopener">LinkedIn</a>
     </div>
     <p class="status"><span class="dot"></span>Open to backend &amp; AI internships · Cairo, on-site</p>
-    <p class="keys">Tip: click the moon, the balloons, the rocket and the capstone. Press <kbd>`</kbd> for a terminal.</p>
+    <p class="keys">It's gamified: 10 hidden artifacts. Click the moon, the balloons, the rocket, the capstone and me. <kbd>`</kbd> opens a terminal.</p>
   </div>
+  <div class="marquee" aria-label="Technologies I use"><div class="track">
+    <span><img class="lg" src="https://cdn.simpleicons.org/cplusplus" alt="">C++</span><span><img class="lg" src="https://cdn.simpleicons.org/typescript" alt="">TypeScript</span><span><img class="lg" src="https://cdn.simpleicons.org/nodedotjs" alt="">Node.js</span><span><img class="lg" src="https://cdn.simpleicons.org/postgresql" alt="">PostgreSQL</span><span><img class="lg" src="https://cdn.simpleicons.org/express/f6ead2" alt="">Express</span><span><img class="lg" src="https://cdn.simpleicons.org/socketdotio/f6ead2" alt="">socket.io</span><span><img class="lg" src="https://cdn.simpleicons.org/docker" alt="">Docker</span><span><img class="lg" src="https://cdn.simpleicons.org/python" alt="">Python</span><span><img class="lg" src="https://cdn.simpleicons.org/react" alt="">React</span><span><img class="lg" src="https://cdn.simpleicons.org/threedotjs/f6ead2" alt="">three.js</span><span><img class="lg" src="https://cdn.simpleicons.org/jest" alt="">Jest</span><span><img class="lg" src="https://cdn.simpleicons.org/git" alt="">Git</span>
+  </div></div>
   <p class="scroll-hint">Scroll to climb</p>
 </section>
 
 <section id="about" class="sec" data-side="right">
-  <div class="panel">
+  <div class="panel tilt">
     <p class="step-no">Step 1 · Foundation</p>
-    <h2>Backend first, AI on top</h2>
-    <p>I'm an AI &amp; Data Science student at Badya University (expected graduation 2028), focused on backend development. I build full-stack and desktop applications with Node.js, PostgreSQL, React and C++.</p>
-    <p>My main project, <strong>SmartHabbit</strong>, is a gamified habit tracker where I worked mainly on the backend: JWT authentication, real-time chat over socket.io, Docker and an automated jest test suite. I also co-authored an IoT security paper now on IEEE Xplore, and I practise problem solving in ICPC contests and on Codeforces.</p>
+    <h2>Backend first. AI on top.</h2>
+    <p>I'm an AI &amp; Data Science student at Badya University (class of 2028) who fell for the backend: the routes, the schemas, the auth flows, the bug that only shows up under load.</p>
+    <p>So far I've built most of the backend of a gamified habit tracker, the API of a four-role lab system, a NASA hackathon game, and co-authored an IoT security paper that landed on <b>IEEE Xplore</b>. Between projects I train for <b>ICPC</b>.</p>
     <ul class="facts">
-      <li><b>2028</b><span>expected graduation</span></li>
+      <li><b data-count="2028">2028</b><span>graduating</span></li>
       <li><b>IEEE</b><span>Xplore co-author</span></li>
-      <li><b>248+</b><span>Codeforces problems</span></li>
-      <li><b>2×</b><span>ICPC ECPC qualifier</span></li>
+      <li><b data-count="248" data-suffix="+">248+</b><span>Codeforces problems</span></li>
+      <li><b data-count="2" data-suffix="×">2×</b><span>ICPC ECPC qualifier</span></li>
     </ul>
   </div>
 </section>
 
 <section id="stack" class="sec" data-side="left">
-  <div class="panel">
+  <div class="panel tilt">
     <p class="step-no">Step 2 · Stack</p>
-    <h2>The tools orbiting my desk</h2>
+    <h2>My arsenal</h2>
+    <p class="hint-line">Tap any tool: I'll tell you where I used it, and its cartouche jumps out of the orbit.</p>
     <div class="groups">
-      <div><h3>Languages</h3><p class="chips"><span>C++</span><span>TypeScript</span><span>JavaScript</span><span>Python</span><span>SQL</span><span>Java</span><span>C#</span></p></div>
-      <div><h3>Backend</h3><p class="chips"><span>Node.js</span><span>Express</span><span>REST APIs</span><span>JWT auth</span><span>socket.io</span></p></div>
-      <div><h3>Data</h3><p class="chips"><span>PostgreSQL</span><span>SQLite</span><span>MySQL</span><span>XGBoost</span><span>Isolation Forest</span><span>Power BI</span></p></div>
-      <div><h3>Frontend &amp; tools</h3><p class="chips"><span>React</span><span>three.js</span><span>Docker</span><span>Git</span><span>Jest</span><span>Postman</span><span>Qt</span><span>Vercel</span></p></div>
+      <div><h3>Languages</h3><p class="chips skills">
+        <button data-skill="C++"><img class="lg" src="https://cdn.simpleicons.org/cplusplus" alt="">C++</button>
+        <button data-skill="TypeScript"><img class="lg" src="https://cdn.simpleicons.org/typescript" alt="">TypeScript</button>
+        <button data-skill="JavaScript"><img class="lg" src="https://cdn.simpleicons.org/javascript" alt="">JavaScript</button>
+        <button data-skill="Python"><img class="lg" src="https://cdn.simpleicons.org/python" alt="">Python</button>
+        <button data-skill="SQL">SQL</button>
+        <button data-skill="Java"><img class="lg" src="https://cdn.simpleicons.org/openjdk/f6ead2" alt="">Java</button>
+        <button data-skill="C#"><img class="lg" src="https://cdn.simpleicons.org/dotnet" alt="">C#</button></p></div>
+      <div><h3>Backend</h3><p class="chips skills">
+        <button data-skill="Node.js"><img class="lg" src="https://cdn.simpleicons.org/nodedotjs" alt="">Node.js</button>
+        <button data-skill="Express"><img class="lg" src="https://cdn.simpleicons.org/express/f6ead2" alt="">Express</button>
+        <button data-skill="REST">REST APIs</button>
+        <button data-skill="JWT"><img class="lg" src="https://cdn.simpleicons.org/jsonwebtokens/f6ead2" alt="">JWT auth</button>
+        <button data-skill="socket.io"><img class="lg" src="https://cdn.simpleicons.org/socketdotio/f6ead2" alt="">socket.io</button></p></div>
+      <div><h3>Data &amp; AI</h3><p class="chips skills">
+        <button data-skill="PostgreSQL"><img class="lg" src="https://cdn.simpleicons.org/postgresql" alt="">PostgreSQL</button>
+        <button data-skill="SQLite"><img class="lg" src="https://cdn.simpleicons.org/sqlite" alt="">SQLite</button>
+        <button data-skill="MySQL"><img class="lg" src="https://cdn.simpleicons.org/mysql" alt="">MySQL</button>
+        <button data-skill="XGBoost">XGBoost</button>
+        <button data-skill="Isolation Forest"><img class="lg" src="https://cdn.simpleicons.org/scikitlearn" alt="">Isolation Forest</button>
+        <button data-skill="Power BI">Power BI</button></p></div>
+      <div><h3>Frontend &amp; tools</h3><p class="chips skills">
+        <button data-skill="React"><img class="lg" src="https://cdn.simpleicons.org/react" alt="">React</button>
+        <button data-skill="three.js"><img class="lg" src="https://cdn.simpleicons.org/threedotjs/f6ead2" alt="">three.js</button>
+        <button data-skill="Docker"><img class="lg" src="https://cdn.simpleicons.org/docker" alt="">Docker</button>
+        <button data-skill="Git"><img class="lg" src="https://cdn.simpleicons.org/git" alt="">Git</button>
+        <button data-skill="Jest"><img class="lg" src="https://cdn.simpleicons.org/jest" alt="">Jest</button>
+        <button data-skill="Postman"><img class="lg" src="https://cdn.simpleicons.org/postman" alt="">Postman</button>
+        <button data-skill="Qt"><img class="lg" src="https://cdn.simpleicons.org/qt" alt="">Qt</button>
+        <button data-skill="Vercel"><img class="lg" src="https://cdn.simpleicons.org/vercel/f6ead2" alt="">Vercel</button></p></div>
     </div>
     <h3 class="sub">How I build</h3>
     <ul class="how">
-      <li><b>Tested.</b> SmartHabbit runs jest + supertest integration tests against a scratch PostgreSQL database.</li>
+      <li><b>Tested.</b> SmartHabbit runs jest + supertest integration tests against a throwaway PostgreSQL database.</li>
       <li><b>Hardened.</b> Rate-limited login, uploads checked by magic bytes, a strict CORS allowlist, a non-root Docker image.</li>
       <li><b>Runnable.</b> One-command start scripts, a demo mode with sample data, READMEs a stranger can follow.</li>
     </ul>
@@ -130,54 +162,60 @@
 <section id="work" class="sec tall" data-side="right">
   <div class="panel wide">
     <p class="step-no">Step 3 · Work</p>
-    <h2>Things I've shipped</h2>
-    <article class="proj">
+    <h2>Shipped. Tested. Live.</h2>
+    <article class="proj tilt">
       <div class="proj-top"><h3>SmartHabbit</h3><span class="tag">Team project · backend</span></div>
-      <p>A gamified habit tracker: XP, streaks, 50 badges, a reward shop whose items all work, friends, leaderboards and real-time chat. I built most of the Node.js + PostgreSQL backend.</p>
+      <p>A habit tracker that plays like a game: XP, streaks, 50 badges, a reward shop where every item actually works, friends, leaderboards and real-time chat. I built most of its Node.js + PostgreSQL backend.</p>
       <ul class="mini">
         <li>JWT access + refresh tokens, bcrypt, 11 SQL migrations that run on boot</li>
-        <li>socket.io chat and notifications sharing the same CORS allowlist as HTTP</li>
-        <li>Login limited to 5 attempts per 15 minutes; avatars validated by magic bytes</li>
+        <li>socket.io chat and notifications behind the same CORS allowlist as HTTP</li>
+        <li>Login capped at 5 tries per 15 minutes; avatars checked by magic bytes, not file names</li>
       </ul>
       <p class="chips sm"><span>Node.js</span><span>Express</span><span>TypeScript</span><span>PostgreSQL</span><span>socket.io</span><span>Docker</span><span>Jest</span></p>
-      <p class="links-row"><a href="https://github.com/adham107harp/SmartHabbit" target="_blank" rel="noopener">Code</a><span class="team">With Mariam Ragheb, Rawan Ibrahim, Abdelrahman Ahmed</span></p>
+      <p class="links-row"><a href="https://github.com/adham107harp/SmartHabbit" target="_blank" rel="noopener">Code</a><button class="see3d" data-screen="smarthabbit">See it in 3D</button><span class="team">With Mariam Ragheb, Rawan Ibrahim, Abdelrahman Ahmed</span></p>
     </article>
-    <article class="proj">
-      <img src="assets/shots/student-dashboard.webp" alt="BU-LabTrack student dashboard" loading="lazy" width="1280" height="800">
+    <article class="proj tilt">
+      <img class="shot" src="assets/shots/student-dashboard.webp" alt="BU-LabTrack student dashboard" loading="lazy" width="1280" height="800">
       <div class="proj-top"><h3>BU-LabTrack</h3><span class="tag">Team project · backend API</span></div>
-      <p>Lab management for Badya University with four roles: students reserve equipment and share tools, instructors approve, technicians handle maintenance, doctors follow research labs. I worked mainly on the backend API; the repo also ships a demo mode so anyone can try every screen.</p>
+      <p>Lab management for Badya University with four roles: students reserve equipment and share tools, instructors approve, technicians fix, doctors follow research labs. I worked mainly on the API; the repo ships a demo mode so anyone can click through every screen.</p>
       <p class="chips sm"><span>REST API</span><span>JWT</span><span>React 18</span><span>TypeScript</span><span>Tailwind</span></p>
-      <p class="links-row"><a href="https://adham107harp.github.io/BU-LabTrack/" target="_blank" rel="noopener">Live demo</a><a href="https://github.com/adham107harp/BU-LabTrack" target="_blank" rel="noopener">Code</a></p>
+      <p class="links-row"><a href="https://adham107harp.github.io/BU-LabTrack/" target="_blank" rel="noopener">Live demo</a><a href="https://github.com/adham107harp/BU-LabTrack" target="_blank" rel="noopener">Code</a><button class="see3d" data-screen="labtrack">See it in 3D</button></p>
     </article>
-    <article class="proj">
-      <img src="assets/shots/title.jpg" alt="CAPCOM: Storm Watch title screen" loading="lazy" width="960" height="540">
-      <div class="proj-top"><h3>CAPCOM: Storm Watch</h3><span class="tag">NASA Space Apps 2026</span></div>
-      <p>A three.js game for kids 7–12: you are mission control, guiding Moon and Mars crews through four real solar storms from NASA DONKI records, plus a live panel of the last 30 days of space weather. A Vercel function reads NASA's API server-side so the key stays secret.</p>
+    <article class="proj tilt">
+      <img class="shot" src="assets/shots/title.jpg" alt="CAPCOM: Storm Watch title screen" loading="lazy" width="960" height="540">
+      <div class="proj-top"><h3>CAPCOM: Storm Watch</h3><span class="tag"><img class="lg" src="https://cdn.simpleicons.org/nasa" alt="">NASA Space Apps 2026</span></div>
+      <p>You're mission control. Real solar storms from NASA's DONKI records hit a Moon crew and a Mars crew, and every call you make costs power, food or radiation shielding. Built in three.js for kids 7–12, with a Vercel function that keeps NASA's API key off the client.</p>
       <p class="chips sm"><span>three.js</span><span>JavaScript</span><span>NASA DONKI</span><span>Vercel functions</span></p>
-      <p class="links-row"><a href="https://capcom-storm-watch.vercel.app/" target="_blank" rel="noopener">Play it</a><a href="https://github.com/adham107harp/capcom-storm-watch" target="_blank" rel="noopener">Code</a><span class="team">With Rawan Ibrahim, Mariam Ragheb</span></p>
+      <p class="links-row"><a href="https://capcom-storm-watch.vercel.app/" target="_blank" rel="noopener">Play it</a><a href="https://github.com/adham107harp/capcom-storm-watch" target="_blank" rel="noopener">Code</a><button class="see3d" data-screen="capcom">See it in 3D</button><span class="team">With Rawan Ibrahim, Mariam Ragheb</span></p>
     </article>
-    <h3 class="sub">Live from GitHub</h3>
+    <h3 class="sub"><img class="lg" src="https://cdn.simpleicons.org/github/f6ead2" alt="">Live from GitHub</h3>
     <div id="gh-live" class="gh" aria-live="polite"><p class="gh-off">Fetching my latest pushes…</p></div>
     <h3 class="sub">On the workbench</h3>
     <ul class="bench">
-      <li><b>Shubha (شُبهة)</b> <span class="tag live">In progress</span> Mobile-wallet fraud detection on PaySim data, Naive Bayes plus rules, API-first. I'm the project manager of a team of four; demo day is 23 Dec 2026.</li>
+      <li><b>Shubha (شُبهة)</b> <span class="tag live">In progress</span> Catching fraud in mobile-wallet transactions: PaySim data, Naive Bayes plus rules, API-first. I'm the project manager of a team of four; demo day is 23 Dec 2026.</li>
       <li><b>Sentinel FDS</b> <span class="tag">Course</span> A fraud-detection desktop app in C++17, Qt 6 and SQLite for the Data Structures course.</li>
-      <li><b>The RSA Heist</b> <span class="tag live">In progress</span> A digital evidence vault plus three RSA attack challenges, for Number Theory &amp; Cryptography.</li>
+      <li><b>The RSA Heist</b> <span class="tag live">In progress</span> A digital evidence vault and three RSA attacks to break it, for Number Theory &amp; Cryptography.</li>
     </ul>
   </div>
 </section>
 
 <section id="research" class="sec" data-side="left">
-  <div class="panel">
+  <div class="panel tilt">
     <p class="step-no">Step 4 · Research</p>
-    <h2>Two pipelines, one risk score</h2>
-    <p class="paper"><a href="https://ieeexplore.ieee.org/document/11765840" target="_blank" rel="noopener">A Modular Dual-Pipeline Anomaly Detection Architecture for IoT Security: Combining Gradient Boosting, Isolation Forest, and Decision Fusion</a></p>
+    <h2>Two pipelines. One verdict.</h2>
+    <p class="paper"><img class="lg" src="https://cdn.simpleicons.org/ieee" alt=""><a href="https://ieeexplore.ieee.org/document/11765840" target="_blank" rel="noopener">A Modular Dual-Pipeline Anomaly Detection Architecture for IoT Security: Combining Gradient Boosting, Isolation Forest, and Decision Fusion</a></p>
     <p class="meta">ITC-Egypt 2026, Cairo · IEEE Xplore · with Tasneem Saleh, Khaled Elhosiny and Marwa Anany</p>
     <ol class="pipe">
       <li><b>Device sensors</b> go through a supervised XGBoost pipeline.</li>
       <li><b>Network traffic</b> goes through an unsupervised Isolation Forest.</li>
       <li><b>Decision fusion</b> merges both into a four-tier risk score.</li>
     </ol>
+    <div class="sim">
+      <label for="threat"><b>Attack simulator</b> Flood the network with anomalous traffic and watch the hologram escalate.</label>
+      <input id="threat" type="range" min="0" max="100" value="0" aria-describedby="risk-out">
+      <p id="risk-out" class="risk" data-tier="0">Risk tier: <b>Low</b></p>
+      <p class="fine">An illustration of the architecture, not the trained model.</p>
+    </div>
     <p>My part: auditing the paper against its notebook before submission, running the revisions after peer review, adding the fusion-ablation and sensitivity experiments, and building the conference deck.</p>
     <h3 class="sub">Next paper</h3>
     <p>Weight-based toll collection for Egyptian roads (الكارتة): plate recognition, vehicle tracking and weigh-in-motion, with charges deducted from a balance. I'm writing the software side with Tasneem Saleh, supervised by Dr. Marwa.</p>
@@ -185,24 +223,29 @@
 </section>
 
 <section id="arena" class="sec" data-side="right">
-  <div class="panel">
+  <div class="panel tilt">
     <p class="step-no">Step 5 · Arena</p>
-    <h2>Contests, balloons and a rocket</h2>
+    <h2>Where I sharpen the blade</h2>
     <ul class="arena">
-      <li><b>88th</b><span>ICPC ECPC Qualifications 2025, Day 2 · Badya University</span></li>
+      <li><b>88th</b><span>ICPC ECPC Qualifications 2025, Day 2 · for Badya University</span></li>
       <li><b>177th</b><span>ICPC ECPC Qualifications 2026</span></li>
-      <li><b>248+</b><span>problems solved on <a href="https://codeforces.com/profile/a.mohammed22" target="_blank" rel="noopener">Codeforces</a></span></li>
-      <li><b>2026</b><span>NASA Space Apps Challenge, team of five, CAPCOM: Storm Watch</span></li>
+      <li><b>248+</b><span><img class="lg" src="https://cdn.simpleicons.org/codeforces" alt="">problems solved on <a href="https://codeforces.com/profile/a.mohammed22" target="_blank" rel="noopener">Codeforces</a></span></li>
+      <li><b>2026</b><span><img class="lg" src="https://cdn.simpleicons.org/nasa" alt="">NASA Space Apps Challenge, team of five</span></li>
     </ul>
-    <p class="next"><b>Next:</b> ODC Champions 2026 national qualifiers on CodinGame, 3 December, team of three.</p>
+    <div class="game-card">
+      <p><b>Balloon Rush</b> In ICPC every solved problem earns a balloon. You get 15 seconds: pop as many as you can.</p>
+      <button id="play" class="btn gold mag">Play Balloon Rush</button>
+      <span id="best" class="best"></span>
+    </div>
+    <p class="next"><b>Next up:</b> ODC Champions 2026 national qualifiers on CodinGame, team of three.</p>
     <h3 class="sub">Certificates</h3>
     <ul class="certs">
-      <li><span>Computer Networks V1.0</span><em>Huawei ICT Academy · Oct 2026</em></li>
-      <li><span>Introduction to Power BI</span><em>DataCamp · Oct 2026</em></li>
-      <li><span>Java (Basic)</span><em>HackerRank · Oct 2025</em></li>
+      <li><span><img class="lg" src="https://cdn.simpleicons.org/huawei" alt="">Computer Networks V1.0</span><em>Huawei ICT Academy · Oct 2026</em></li>
+      <li><span><img class="lg" src="https://cdn.simpleicons.org/datacamp" alt="">Introduction to Power BI</span><em>DataCamp · Oct 2026</em></li>
+      <li><span><img class="lg" src="https://cdn.simpleicons.org/hackerrank" alt="">Java (Basic)</span><em>HackerRank · Oct 2025</em></li>
       <li><span>C Programming From Basics to Mastery</span><em>ITI / Mahara-Tech · Aug 2025</em></li>
       <li><span>Java DevBelt, Yellow Belt: Mastering OOP (45 h)</span><em>ITI · Jul 2025</em></li>
-      <li><span>DataCamp × Flashat scholarship</span><em>2026</em></li>
+      <li><span><img class="lg" src="https://cdn.simpleicons.org/datacamp" alt="">DataCamp × Flashat scholarship</span><em>2026</em></li>
     </ul>
     <p class="links-row"><a href="https://drive.google.com/drive/folders/1aJtpq_AU3GCCMX9621kTkxoQukBJ0SI-?usp=sharing" target="_blank" rel="noopener">All certificates</a></p>
   </div>
@@ -211,17 +254,20 @@
 <section id="contact" class="sec" data-side="left">
   <div class="panel contact">
     <p class="step-no">The capstone · Contact</p>
-    <h2>Send a request to the top</h2>
+    <h2>Send a request. It actually lands.</h2>
+    <p>This form goes straight to my inbox, and the capstone fires when it does. I read every one.</p>
     <form id="req" novalidate>
       <div class="row">
-        <label>Your name<input id="f-name" name="name" autocomplete="name" placeholder="Recruiter at a great company"></label>
-        <label>Role or topic<input id="f-role" name="role" placeholder="Backend internship"></label>
+        <label>Your name<input id="f-name" name="name" autocomplete="name" placeholder="Recruiter at a great company" required></label>
+        <label>Your email<input id="f-email" name="email" type="email" autocomplete="email" placeholder="so I can reply" required></label>
       </div>
-      <label>Message<textarea id="f-msg" name="msg" rows="3" placeholder="Hi Adham, we'd like to talk about…"></textarea></label>
+      <label>Role or topic<input id="f-role" name="role" placeholder="Backend internship"></label>
+      <label>Message<textarea id="f-msg" name="msg" rows="3" placeholder="Hi Adham, we'd like to talk about…" required></textarea></label>
+      <input class="hp" type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true">
       <pre id="req-preview" class="mono" aria-label="Request preview"></pre>
       <div class="cta">
-        <button class="btn gold" type="submit">Send request</button>
-        <button class="btn" type="button" id="copy-mail">Copy email</button>
+        <button class="btn gold mag" type="submit" id="send-btn">Send request</button>
+        <button class="btn mag" type="button" id="copy-mail">Copy email</button>
       </div>
       <p id="req-status" class="req-status" aria-live="polite"></p>
     </form>
@@ -237,7 +283,14 @@
 
 </main>
 
-<!-- terminal -->
+<div id="art-panel" role="dialog" aria-modal="true" aria-label="Artifacts" hidden>
+  <div class="art-win">
+    <div class="art-top"><h2>Artifacts <span id="art-of"></span></h2><button id="art-close" aria-label="Close">×</button></div>
+    <ul id="art-list"></ul>
+    <p class="fine">Saved in this browser. Collect all ten and mini-Adham has something to say.</p>
+  </div>
+</div>
+
 <div id="term" role="dialog" aria-modal="true" aria-label="Terminal" hidden>
   <div class="term-win">
     <div class="term-bar"><span>adham@saqqara:~</span><button id="term-close" aria-label="Close terminal">×</button></div>

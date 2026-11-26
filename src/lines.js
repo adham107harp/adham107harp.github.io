@@ -35,3 +35,46 @@ export const CLICKS = {
   moon: { en: 'The Moon from Level 0 of CAPCOM: Storm Watch says hi.', ar: 'القمر بتاع Level 0 في لعبة CAPCOM بيسلّم عليك.' },
   cap: { en: 'You found the capstone! Now send me a real request below.', ar: 'لقيت القمة الدهب! ابعتلي بقى request بجد من تحت.' },
 };
+
+// where each skill shows up in my work (for the Stack chips)
+export const SKILLS = {
+  'C++': ['ICPC contests and Sentinel FDS, a Qt desktop app.', 'مسابقات ICPC، و Sentinel FDS برنامج ديسكتوب بـ Qt.'],
+  TypeScript: ['The SmartHabbit backend and the BU-LabTrack frontend.', 'الباك إند بتاع SmartHabbit والفرونت بتاع BU-LabTrack.'],
+  JavaScript: ['CAPCOM: Storm Watch and this whole pyramid.', 'لعبة CAPCOM والهرم ده كله.'],
+  Python: ['The IoT Sentinel experiments and Shubha\'s fraud model.', 'تجارب IoT Sentinel وموديل الاحتيال بتاع شُبهة.'],
+  SQL: ['Every schema I design. SmartHabbit has 11 migrations.', 'كل سكيما بعملها. SmartHabbit فيه 11 migration.'],
+  Java: ['ITI DevBelt OOP and the HackerRank certificate.', 'كورس OOP في ITI وشهادة HackerRank.'],
+  'C#': ['University coursework, and a lot of curiosity.', 'شغل الجامعة… وفضول كتير.'],
+  'Node.js': ['My main backend runtime: SmartHabbit and BU-LabTrack.', 'الـ runtime الأساسي بتاعي: SmartHabbit و BU-LabTrack.'],
+  Express: ['Routes, middleware and error handling in SmartHabbit.', 'الـ routes والـ middleware والـ error handling في SmartHabbit.'],
+  REST: ['BU-LabTrack: labs, equipment, reservations, maintenance.', 'BU-LabTrack: معامل وأجهزة وحجوزات وصيانة.'],
+  JWT: ['Access + refresh tokens, with bcrypt and rate limits.', 'Access و refresh tokens مع bcrypt و rate limit.'],
+  'socket.io': ['Real-time chat and notifications in SmartHabbit.', 'الشات والإشعارات اللحظية في SmartHabbit.'],
+  PostgreSQL: ['SmartHabbit\'s database, tested against a scratch DB.', 'داتابيز SmartHabbit، ومتيسّتة على داتابيز مؤقتة.'],
+  SQLite: ['Sentinel FDS stores its transactions in SQLite.', 'Sentinel FDS بيخزن العمليات في SQLite.'],
+  MySQL: ['Database courses and side projects.', 'كورسات الداتابيز ومشاريع جانبية.'],
+  XGBoost: ['The supervised pipeline in my IEEE paper.', 'الـ pipeline الـ supervised في ورقة IEEE.'],
+  'Isolation Forest': ['The unsupervised pipeline in my IEEE paper.', 'الـ pipeline الـ unsupervised في ورقة IEEE.'],
+  'Power BI': ['DataCamp: Introduction to Power BI.', 'كورس Power BI على DataCamp.'],
+  React: ['BU-LabTrack\'s frontend, with shadcn/ui.', 'فرونت BU-LabTrack مع shadcn/ui.'],
+  'three.js': ['CAPCOM: Storm Watch, and the pyramid you\'re standing on.', 'لعبة CAPCOM، والهرم اللي إنت واقف عليه.'],
+  Docker: ['SmartHabbit ships in a non-root Docker image.', 'SmartHabbit بيتشحن في Docker image من غير root.'],
+  Git: ['Every project. Small commits, clear messages.', 'كل مشروع. commits صغيرة ورسايل واضحة.'],
+  Jest: ['Integration tests with supertest in SmartHabbit.', 'تستات integration مع supertest في SmartHabbit.'],
+  Postman: ['Testing every API before the frontend touches it.', 'بجرب كل API قبل ما الفرونت يلمسه.'],
+  Qt: ['Sentinel FDS, a C++17 desktop app.', 'Sentinel FDS، برنامج ديسكتوب بـ C++17.'],
+  Vercel: ['CAPCOM is deployed there, with a serverless function.', 'CAPCOM متنشرة هناك مع serverless function.'],
+};
+export const MOOD_BY_LEVEL = ['happy', 'focused', 'thinking', 'excited', 'focused', 'cool', 'happy'];
+export const EXTRA = {
+  term: { en: 'Ooh, a terminal. Type "help".', ar: 'تيرمينال! اكتب help.' },
+  threatHi: { en: 'Critical risk! The fusion layer would raise the alarm right now.', ar: 'خطر عالي جداً! طبقة الـ fusion كانت هتضرب إنذار حالاً.' },
+  gameStart: { en: 'Go go go! Pop them before they fly away!', ar: 'يلا يلا! فرقعهم قبل ما يطيروا!' },
+  gameEnd: { en: (n) => `${n} balloons! ${n >= 8 ? 'That\'s a gold-medal pace.' : 'Not bad. Try again?'}`, ar: (n) => `${n} بالونة! ${n >= 8 ? 'ده مستوى ميدالية دهب.' : 'مش وحش. تجرب تاني؟'}` },
+  wake: { en: 'Huh? I wasn\'t sleeping. I was… compiling.', ar: 'ها؟ أنا مكنتش نايم… كنت بعمل compile.' },
+  dizzy: { en: 'Whoa, slow down! The stairs are spinning.', ar: 'بالراحة! السلم بيلف بيا.' },
+  shy: { en: 'Okay okay, I get it, I\'m cute.', ar: 'خلاص خلاص، عرفت إني كيوت.' },
+  annoyed: { en: 'Error 429: too many pokes.', ar: 'Error 429: زقات كتير أوي.' },
+  allArtifacts: { en: 'You found all ten artifacts! You\'d be a great teammate.', ar: 'لقيت العشر قطع كلهم! إنت هتبقى teammate جامد.' },
+  focus: { en: 'Here it is, up close.', ar: 'أهو، من قريب.' },
+};
