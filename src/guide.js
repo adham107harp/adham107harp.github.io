@@ -1,15 +1,33 @@
 // Mini-Adham: a cel-shaded chibi guide built from primitives and animated in code.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { toon, S, H, FLIGHT, levelY, PAL } from './world.js';
+import { S, H, FLIGHT, levelY, PAL } from './world.js';
 
 const SKIN = 0xd9a47c, HAIR = 0x1b1411, SUIT = 0x1c2a5e, SHIRT = 0xf4efe6, TIE = 0x14193a, PANTS = 0x18203f, SHOE = 0xf2ece2;
-const OUT = new THREE.MeshBasicMaterial({ color: 0x0a0d1c, side: THREE.BackSide });
+// physically based materials: skin with a soft sheen, wool suit, glossy hair and shoes
+const MATS = {};
+function mat(color) {
+  if (MATS[color]) return MATS[color];
+  const base = { color, roughness: 0.7 };
+  if (color === SKIN) Object.assign(base, { roughness: 0.52, sheen: 0.6, sheenColor: new THREE.Color(0xff9a7a), sheenRoughness: 0.5 });
+  else if (color === SUIT || color === PANTS) Object.assign(base, { roughness: 0.82, sheen: 1, sheenColor: new THREE.Color(0x5566aa), sheenRoughness: 0.55 });
+  else if (color === HAIR) Object.assign(base, { roughness: 0.42, sheen: 0.8, sheenColor: new THREE.Color(0x6b4a3a), sheenRoughness: 0.35, clearcoat: 0.25 });
+  else if (color === SHOE) Object.assign(base, { roughness: 0.35, clearcoat: 0.7 });
+  else if (color === SHIRT) Object.assign(base, { roughness: 0.6, sheen: 0.5, sheenColor: new THREE.Color(0xffffff) });
+  else if (color === TIE) Object.assign(base, { roughness: 0.38, sheen: 0.8, sheenColor: new THREE.Color(0x4b5bb0) });
+  return (MATS[color] = new THREE.MeshPhysicalMaterial(base));
+}
+const toon = (c) => mat(c);
 
-function part(geo, color, outline = 1.06, extra) {
-  const m = new THREE.Mesh(geo, toon(color, extra)); m.castShadow = true;
-  if (outline) { const o = new THREE.Mesh(geo, OUT); o.scale.setScalar(outline); m.add(o); }
+function part(geo, color) {
+  const m = new THREE.Mesh(geo, mat(color)); m.castShadow = true; m.receiveShadow = true;
   return m;
+}
+
+function blobTex() {
+  const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+  const gr = g.createRadialGradient(32, 32, 2, 32, 32, 32); gr.addColorStop(0, '#fff'); gr.addColorStop(1, '#000'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c);
 }
 
 export function createGuide() {
@@ -19,7 +37,7 @@ export function createGuide() {
   // legs
   const legs = [-1, 1].map((s) => {
     const hip = new THREE.Group(); hip.position.set(0.12 * s, 0.6, 0); body.add(hip);
-    const leg = part(new THREE.CapsuleGeometry(0.085, 0.36, 4, 10), PANTS); leg.position.y = -0.27; hip.add(leg);
+    const leg = part(new THREE.CapsuleGeometry(0.085, 0.36, 8, 20), PANTS); leg.position.y = -0.27; hip.add(leg);
     const shoe = part(new RoundedBoxGeometry(0.17, 0.11, 0.28, 2, 0.05), SHOE); shoe.position.set(0, -0.53, 0.05); hip.add(shoe);
     const sole = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.03, 0.28), toon(0x2b2f3d)); sole.position.set(0, -0.585, 0.05); hip.add(sole);
     return hip;
@@ -27,7 +45,7 @@ export function createGuide() {
 
   // torso: blazer, shirt, tie
   const torso = new THREE.Group(); torso.position.y = 0.6; body.add(torso);
-  const jacket = part(new RoundedBoxGeometry(0.5, 0.5, 0.3, 3, 0.1), SUIT); jacket.position.y = 0.26; torso.add(jacket);
+  const jacket = part(new RoundedBoxGeometry(0.5, 0.5, 0.3, 5, 0.1), SUIT); jacket.position.y = 0.26; torso.add(jacket);
   const shirt = new THREE.Mesh(new THREE.CylinderGeometry(0.0, 0.11, 0.26, 3), toon(SHIRT)); shirt.rotation.set(Math.PI, Math.PI / 6, 0); shirt.scale.z = 0.25; shirt.position.set(0, 0.36, 0.145); torso.add(shirt);
   const tie = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.22, 0.02), toon(TIE)); tie.position.set(0, 0.32, 0.158); torso.add(tie);
   const knot = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.045, 0.03), toon(TIE)); knot.position.set(0, 0.46, 0.155); torso.add(knot);
@@ -37,7 +55,7 @@ export function createGuide() {
   // arms (pivot at shoulder)
   const arms = [-1, 1].map((s) => {
     const sh = new THREE.Group(); sh.position.set(0.3 * s, 0.46, 0); torso.add(sh);
-    const upper = part(new THREE.CapsuleGeometry(0.072, 0.3, 4, 10), SUIT); upper.position.y = -0.18; sh.add(upper);
+    const upper = part(new THREE.CapsuleGeometry(0.072, 0.3, 8, 20), SUIT); upper.position.y = -0.18; sh.add(upper);
     const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.066, 0.066, 0.04, 10), toon(SHIRT)); cuff.position.y = -0.37; sh.add(cuff);
     const hand = part(new THREE.SphereGeometry(0.07, 14, 10), SKIN); hand.position.y = -0.43; sh.add(hand);
     return sh;
@@ -47,17 +65,31 @@ export function createGuide() {
   const neck = new THREE.Group(); neck.position.y = 1.12; body.add(neck);
   const neckM = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.1, 10), toon(SKIN)); neck.add(neckM);
   const head = new THREE.Group(); head.position.y = 0.06; neck.add(head);
-  const skull = part(new THREE.SphereGeometry(0.35, 32, 24), SKIN, 1.04); skull.scale.set(1, 0.97, 0.94); skull.position.y = 0.34; head.add(skull);
+  const skull = part(new THREE.SphereGeometry(0.35, 48, 36), SKIN, 1.04); skull.scale.set(1, 0.97, 0.94); skull.position.y = 0.34; head.add(skull);
   for (const s of [-1, 1]) { const ear = part(new THREE.SphereGeometry(0.075, 12, 10), SKIN, 1.08); ear.scale.set(0.6, 1, 0.8); ear.position.set(0.34 * s, 0.33, 0); head.add(ear); }
   // hair: cap + a voluminous front sweep
   const cap = part(new THREE.SphereGeometry(0.37, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.52), HAIR, 1.03); cap.scale.set(1.02, 1.0, 1.0); cap.position.set(0, 0.36, -0.03); cap.rotation.x = -0.32; head.add(cap);
   const tufts = [[-0.17, 0.62, 0.17, 0.15], [0.0, 0.67, 0.19, 0.17], [0.17, 0.62, 0.15, 0.15], [0.09, 0.66, 0.06, 0.16], [-0.09, 0.66, 0.06, 0.16], [0.26, 0.5, 0.12, 0.12], [-0.26, 0.5, 0.12, 0.12]];
   for (const [x, y, z, r] of tufts) { const t = part(new THREE.SphereGeometry(r, 16, 12), HAIR, 1.05); t.position.set(x, y, z); t.scale.set(1.1, 0.75, 1); head.add(t); }
   for (const s of [-1, 1]) { const sb = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.12, 0.07), toon(HAIR)); sb.position.set(0.325 * s, 0.32, 0.08); head.add(sb); }
+  // strand clumps for texture
+  {
+    const clump = new THREE.CapsuleGeometry(0.045, 0.14, 4, 8); let seed = 3; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    for (let i = 0; i < 46; i++) {
+      const th = rnd() * Math.PI * 2, ph = rnd() * Math.PI * 0.42, r = 0.365;
+      const n = new THREE.Vector3(Math.sin(ph) * Math.cos(th), Math.cos(ph), Math.sin(ph) * Math.sin(th) - 0.08).normalize();
+      const c = new THREE.Mesh(clump, mat(HAIR)); c.castShadow = true;
+      c.position.copy(n).multiplyScalar(r).add(new THREE.Vector3(0, 0.37, -0.03));
+      const dir = new THREE.Vector3(0, -0.35, -1).projectOnPlane(n).normalize();
+      if (n.z > 0.35) dir.set(0, 0.6, 1).projectOnPlane(n).normalize(); // front sweeps up
+      c.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+      head.add(c);
+    }
+  }
   // face
   const face = new THREE.Group(); face.position.set(0, 0.34, 0.305); head.add(face);
   const eyes = [-1, 1].map((s) => {
-    const e = new THREE.Mesh(new THREE.SphereGeometry(0.046, 14, 10), new THREE.MeshBasicMaterial({ color: 0x120d0b })); e.scale.set(0.95, 1.3, 0.55); e.position.set(0.12 * s, 0.02, 0.02);
+    const e = new THREE.Mesh(new THREE.SphereGeometry(0.046, 20, 14), new THREE.MeshPhysicalMaterial({ color: 0x1a120e, roughness: 0.05, clearcoat: 1, clearcoatRoughness: 0.02 })); e.scale.set(0.95, 1.3, 0.55); e.position.set(0.12 * s, 0.02, 0.02);
     const hl = new THREE.Mesh(new THREE.SphereGeometry(0.014, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff })); hl.position.set(0.018, 0.022, 0.04); e.add(hl);
     face.add(e); return e;
   });
@@ -67,8 +99,9 @@ export function createGuide() {
   const blush = [-1, 1].map((s) => { const b = new THREE.Mesh(new THREE.CircleGeometry(0.04, 12), new THREE.MeshBasicMaterial({ color: 0xe0806a, transparent: true, opacity: 0.35 })); b.position.set(0.2 * s, -0.04, 0.005); b.rotation.y = 0.35 * s; face.add(b); return b; });
 
   // soft spot light so he always reads against the night
-  const key = new THREE.PointLight(0xffe6c4, 2.2, 4.5, 1.5); key.position.set(0.6, 2.0, 1.4); root.add(key);
-  const shadowBlob = new THREE.Mesh(new THREE.CircleGeometry(0.42, 24), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false }));
+  const key = new THREE.PointLight(0xffe2c0, 1.6, 4.5, 1.6); key.position.set(0.7, 2.1, 1.5); root.add(key);
+  const fill = new THREE.PointLight(0x8fa8ff, 0.6, 4, 1.8); fill.position.set(-1.0, 1.4, 1.2); root.add(fill);
+  const shadowBlob = new THREE.Mesh(new THREE.CircleGeometry(0.42, 32), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.22, depthWrite: false, alphaMap: blobTex() }));
   shadowBlob.rotation.x = -Math.PI / 2; shadowBlob.position.y = 0.02; root.add(shadowBlob);
 
   root.scale.setScalar(1.15);

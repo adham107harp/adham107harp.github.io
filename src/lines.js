@@ -28,3 +28,10 @@ export const POKES = {
   ar: ['بتزغزغني كده!', 'Status 418: أنا براد شاي ☕', 'جربت تقفله وتفتحه تاني؟', 'SELECT * FROM snacks;', 'الكود شغال وأنا عارف ليه… غالباً.', 'Rate limit: خمس زقات كل ربع ساعة. بهزر.'],
 };
 export const SENT = { en: '201 Created! Your request reached the top.', ar: '201 Created! الريكويست بتاعك وصل للقمة.' };
+
+export const CLICKS = {
+  balloon: { en: 'Pop! Every balloon is a solved problem. It comes back when I solve another one.', ar: 'بوم! كل بالونة مسألة اتحلت، وهترجع لما أحل واحدة كمان.' },
+  rocket: { en: 'Full thrust! Same energy as hackathon weekend.', ar: 'Full thrust! نفس طاقة ويك إند الهاكاثون.' },
+  moon: { en: 'The Moon from Level 0 of CAPCOM: Storm Watch says hi.', ar: 'القمر بتاع Level 0 في لعبة CAPCOM بيسلّم عليك.' },
+  cap: { en: 'You found the capstone! Now send me a real request below.', ar: 'لقيت القمة الدهب! ابعتلي بقى request بجد من تحت.' },
+};
