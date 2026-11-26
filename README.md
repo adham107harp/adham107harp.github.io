@@ -11,7 +11,7 @@ Built with [three.js](https://github.com/mrdoob/three.js), [GSAP](https://github
 ## Features
 
 - **A guide with moods.** Mini-Adham has a painted, expressive face and 13 moods (happy, excited, focused, thinking, cool, surprised, shy, annoyed, sleepy, dizzy, love, worried, vibing). They change with the level, with what you do (poke him, scroll too fast, leave him idle, turn the music on) and he puts on sunglasses or headphones when the mood calls for it.
-- **Contact form that delivers.** Messages go straight to my inbox through [FormSubmit](https://formsubmit.co), with the HTTP request and response shown live, a honeypot against bots and an email fallback.
+- **Contact form that delivers.** Messages go straight to my inbox through [Web3Forms](https://web3forms.com), with the HTTP request and response shown live, a honeypot against bots and an email fallback.
 - **Live demos inside the pyramid.** "Try it in 3D" flies to a monitor and mounts the project's real, live demo on it (CSS3D), so you can use SmartHabbit, BU-LabTrack or CAPCOM without leaving the page. On phones the monitor turns to portrait.
 - **Gamified.** 11 hidden artifacts to collect, a Balloon Rush mini-game in the Arena, an attack simulator that drives the IoT Sentinel hologram, and a terminal (`help`, `mood cool`, `sudo hire adham`).
 - **Physically based rendering.** Procedural sandstone (albedo, normal and roughness maps), sky-based environment lighting, soft moon shadows, ambient occlusion (GTAO), bloom and a light film grade.

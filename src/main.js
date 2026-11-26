@@ -497,8 +497,10 @@ function setupUI() {
   const f = { name: $('#f-name'), email: $('#f-email'), role: $('#f-role'), msg: $('#f-msg') }, pre = $('#req-preview'), status = $('#req-status');
   const esc = (s) => JSON.stringify(s);
   const EMAIL = 'adhamharp994@gmail.com';
-  // Messages are delivered by FormSubmit (formsubmit.co), a free form-to-email relay for static sites.
-  const ENDPOINT = `https://formsubmit.co/ajax/${EMAIL}`;
+  // Messages are delivered by Web3Forms (web3forms.com), a form-to-email relay for static sites.
+  // The access key only lets someone send mail to this inbox, so it is safe to ship in the page.
+  const ENDPOINT = 'https://api.web3forms.com/submit';
+  const ACCESS_KEY = '64907423-cd59-4133-8f33-a9a404e59b81';
   const reqText = () => `POST /api/hire HTTP/1.1\nHost: adham107harp.github.io\nContent-Type: application/json\n\n{\n  "from": ${esc(f.name.value || 'you')},\n  "replyTo": ${esc(f.email.value || 'you@company.com')},\n  "about": ${esc(f.role.value || 'an opportunity')},\n  "message": ${esc((f.msg.value || '…').slice(0, 140))}\n}`;
   const render = () => { pre.textContent = reqText(); };
   Object.values(f).forEach((i) => i.addEventListener('input', render)); render();
@@ -513,8 +515,8 @@ function setupUI() {
     pre.textContent = reqText() + '\n\n… awaiting response';
     try {
       const r = await fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({
-        name: f.name.value.trim(), email: f.email.value.trim(), topic: f.role.value.trim() || '(none)', message: f.msg.value.trim(),
-        _subject: `Portfolio: ${f.role.value.trim() || 'new message'} from ${f.name.value.trim()}`, _template: 'table', _captcha: 'false', _replyto: f.email.value.trim(),
+        access_key: ACCESS_KEY, subject: `Portfolio: ${f.role.value.trim() || 'new message'} from ${f.name.value.trim()}`, from_name: 'Portfolio contact form',
+        name: f.name.value.trim(), email: f.email.value.trim(), topic: f.role.value.trim() || '(none)', message: f.msg.value.trim(), replyto: f.email.value.trim(), botcheck: '',
       }) });
       const data = await r.json().catch(() => ({}));
       if (!r.ok || String(data.success) !== 'true') throw new Error(data.message || r.status);
