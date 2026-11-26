@@ -539,7 +539,7 @@ function setupUI() {
   // terminal
   const term = $('#term'), out = $('#term-out'), input = $('#term-in');
   const print = (s, cls = '') => { const d = document.createElement('div'); if (cls) d.className = cls; d.textContent = s; out.appendChild(d); out.scrollTop = out.scrollHeight; };
-  const sectionsByName = { home: 0, hero: 0, about: 1, stack: 2, work: 3, projects: 3, research: 4, arena: 5, contact: 6 };
+  const sectionsByName = { home: 0, hero: 0, about: 1, stack: 2, work: 3, projects: 3, research: 4, arena: 5, achievements: 5, contests: 5, contact: 6 };
   const cmds = {
     artifacts: () => { openArt(); return 'opening the artifact case…'; },
     moods: () => 'moods: happy excited focused thinking cool surprised shy annoyed sleepy dizzy love worried vibing · try: mood cool',

@@ -1,5 +1,5 @@
 // What mini-Adham says on each level, in English and Egyptian Arabic.
-export const LEVEL_NAMES = ['Start', 'About', 'Stack', 'Work', 'Research', 'Contests', 'Contact'];
+export const LEVEL_NAMES = ['Start', 'About', 'Stack', 'Projects', 'Research', 'Achievements', 'Contact'];
 export const MODES = ['wave', 'point', 'think', 'point', 'point', 'celebrate', 'wave'];
 
 export const LINES = {
