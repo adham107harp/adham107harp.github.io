@@ -1,0 +1,398 @@
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { SplitText } from 'gsap/SplitText';
+import Lenis from 'lenis';
+import { buildWorld, H } from './world.js';
+import { createGuide, guideXZ, heightAt, standPoint, STAND_COUNT } from './guide.js';
+import { LINES, POKES, SENT, MODES, LEVEL_NAMES } from './lines.js';
+
+gsap.registerPlugin(ScrollTrigger, SplitText);
+const $ = (s) => document.querySelector(s);
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const isNarrow = () => innerWidth <= 820;
+const N = STAND_COUNT; // 7 levels
+
+// ---------- language for the guide ----------
+let lang = 'en';
+try { lang = localStorage.getItem('adham-guide-lang') || 'en'; } catch (e) {}
+
+// ---------- smooth scroll ----------
+const lenis = new Lenis({ smoothWheel: !reduced, lerp: 0.085, autoRaf: false });
+lenis.on('scroll', ScrollTrigger.update);
+gsap.ticker.add((time) => lenis.raf(time * 1000));
+gsap.ticker.lagSmoothing(0);
+const sections = [...document.querySelectorAll('.sec')];
+const goTo = (i) => lenis.scrollTo(sections[i], { offset: i === 0 ? 0 : -Math.max(0, (innerHeight - sections[i].offsetHeight) / 2), duration: reduced ? 0 : 2.2 });
+document.querySelectorAll('[data-go]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); goTo(+a.dataset.go); }));
+
+// ---------- hero name: decode from hieroglyphs ----------
+function decodeName() {
+  const el = $('#name'), target = 'Adham Harp', glyphs = Array.from('𓂀𓃭𓆣𓇳𓊖𓋹𓎛𓏏𓅓𓈖𓀀𓁹𓆓𓍯');
+  if (reduced) { el.textContent = target; return; }
+  const st = { p: 0 };
+  gsap.to(st, {
+    p: 1, duration: 2.4, ease: 'power2.inOut', onUpdate() {
+      const k = Math.floor(st.p * target.length);
+      el.innerHTML = [...target].map((ch, i) => (i < k || ch === ' ' ? ch : `<span class="gl">${glyphs[(Math.random() * glyphs.length) | 0]}</span>`)).join('');
+    }, onComplete() { el.textContent = target; },
+  });
+}
+
+// ---------- 3D setup ----------
+const canvas = $('#scene');
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' }); } catch (e) { renderer = null; }
+
+const ui = setupUI();
+if (!renderer) {
+  canvas.remove(); $('#loader').classList.add('done'); decodeName(); revealPanels();
+} else {
+  start().catch((e) => { console.error(e); $('#loader').classList.add('done'); decodeName(); revealPanels(); });
+}
+
+async function start() {
+  // wait for fonts so canvas textures use them (but never forever)
+  await Promise.race([Promise.all(['700 54px Unbounded', '600 42px "Instrument Sans"'].map((f) => document.fonts.load(f))), new Promise((r) => setTimeout(r, 2500))]);
+
+  let dpr = Math.min(devicePixelRatio, isNarrow() ? 1.5 : 1.75);
+  renderer.setPixelRatio(dpr);
+  renderer.setSize(innerWidth, innerHeight, false);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.92;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
+
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x101a48, 0.0085);
+  const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 1500);
+
+  const manager = new THREE.LoadingManager();
+  let loaded = 0, total = 1;
+  manager.onProgress = (u, l, t) => { loaded = l; total = t; setPct(l / t); };
+  const world = buildWorld(scene, manager);
+  const guide = createGuide(); scene.add(guide.root);
+
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), 0.7, 0.45, 0.9);
+  composer.addPass(bloom); composer.addPass(new OutputPass());
+  let useComposer = true;
+
+  // camera rig keyframes (position + target per level)
+  let camPos = [], camTgt = [], posCurve, tgtCurve, rigNarrow = null;
+  function buildRig() {
+  rigNarrow = isNarrow(); camPos = []; camTgt = [];
+  for (let L = 0; L < N; L++) {
+    const p = standPoint(L);
+    if (L === 0) {
+      if (rigNarrow) { camPos.push(new THREE.Vector3(5.5, 3.2, p.z + 10)); camTgt.push(new THREE.Vector3(2.2, 2.6, p.z - 2)); }
+      else { camPos.push(new THREE.Vector3(10, 4.6, p.z + 13)); camTgt.push(new THREE.Vector3(-1.2, 6.2, 8)); }
+      continue;
+    }
+    if (L === N - 1) { camPos.push(new THREE.Vector3(-7.5, p.y + 3.6, 12.5)); camTgt.push(new THREE.Vector3(-0.6, p.y + 2.1, 0.4)); continue; }
+    const side = Math.sign(p.x) || 1;
+    camPos.push(new THREE.Vector3(p.x + side * 3.2, p.y + 3.3, p.z + 10.5));
+    camTgt.push(new THREE.Vector3(p.x * 0.85 + side * 1.2, p.y + 1.7, p.z - 1.2));
+  }
+  posCurve = new THREE.CatmullRomCurve3(camPos, false, 'centripetal');
+  tgtCurve = new THREE.CatmullRomCurve3(camTgt, false, 'centripetal');
+  }
+  buildRig();
+  // where to put the subject on screen: 0 = right (panel left), 1 = left (panel right), .5 = centre
+  const shift = sections.map((s) => ({ left: 0, right: 1, center: 0.5 })[s.dataset.side] ?? 0.5);
+
+  // intro: fly in from the dunes
+  const intro = { k: reduced ? 0 : 1 };
+  const introFrom = new THREE.Vector3(46, 30, 90);
+
+  // ---------- scroll -> q ----------
+  let bounds = [];
+  const measure = () => { bounds = sections.map((s) => s.offsetTop); };
+  measure(); addEventListener('load', measure);
+  new ResizeObserver(measure).observe(document.body);
+  const sstep = (a, b, x) => { const t = THREE.MathUtils.clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+  function scrollQ() {
+    const s = (lenis.scroll ?? scrollY) + innerHeight * 0.5, w = innerHeight * 0.42;
+    let q = 0; for (let i = 1; i < bounds.length; i++) q += sstep(bounds[i] - w, bounds[i] + w, s);
+    return q;
+  }
+
+  // ---------- interaction ----------
+  const mouse = new THREE.Vector2(), ray = new THREE.Raycaster();
+  addEventListener('pointermove', (e) => { mouse.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); });
+  canvas.addEventListener('pointerdown', (e) => {
+    const m = new THREE.Vector2((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+    ray.setFromCamera(m, camera);
+    if (ray.intersectObject(guide.root, true).length) { guide.poke(); const pool = POKES[lang]; ui.say(pool[(Math.random() * pool.length) | 0], { temp: true }); }
+  });
+  // pointer cursor over the guide (cheap: test every few frames)
+  let hoverTick = 0, hovering = false;
+
+  ui.onSend = () => {
+    const p = world.props;
+    guide.setMode('celebrate'); world.packetBoost = 1;
+    gsap.timeline()
+      .to(p.beam.material, { opacity: 0.85, duration: 0.35, ease: 'power2.out' })
+      .to(p.capLight, { intensity: 60, duration: 0.3 }, 0)
+      .to(p.beam.material, { opacity: 0, duration: 2.4, ease: 'power1.in' }, 0.9)
+      .to(p.capLight, { intensity: 6, duration: 2 }, 1);
+    p.rings.forEach((r, i) => gsap.fromTo(r.scale, { x: 1, y: 1, z: 1 }, { x: 9, y: 9, z: 9, duration: 2.2, delay: i * 0.3, ease: 'power2.out' }));
+    p.rings.forEach((r, i) => gsap.fromTo(r.material, { opacity: 1 }, { opacity: 0, duration: 2.2, delay: i * 0.3 }));
+    ui.say(SENT[lang], { temp: true });
+  };
+  ui.onLang = () => { lastSpoken = -1; };
+  ui.onPoke = () => { guide.poke(); };
+
+  // ---------- resize ----------
+  function resize() {
+    const w = innerWidth, h = innerHeight;
+    renderer.setSize(w, h, false); composer.setSize(w, h); bloom.setSize(w / 2, h / 2);
+    if (rigNarrow !== isNarrow()) buildRig();
+    camera.aspect = w / h; camera.fov = w / h < 0.8 ? 60 : w / h < 1.2 ? 50 : 42; camera.updateProjectionMatrix();
+  }
+  addEventListener('resize', resize); resize();
+
+  // ---------- loop ----------
+  let tPrev = performance.now(), tAcc = 0;
+  let qS = scrollQ(), lastSpoken = -1, settleT = 0, curLevel = -1;
+  const v2 = new THREE.Vector2(), prevXZ = new THREE.Vector2(), tmp = new THREE.Vector3(), look = new THREE.Vector3();
+  guideXZ(qS, prevXZ);
+  guide.root.position.set(prevXZ.x, heightAt(prevXZ.x, prevXZ.y), prevXZ.y);
+  let frames = 0, slowAcc = 0, perfChecked = false;
+  let offsetS = shift[0];
+
+  function frame() {
+    const now = performance.now(), dt = Math.min((now - tPrev) / 1000, 0.05); tPrev = now; tAcc += dt; const t = tAcc;
+    const q = scrollQ();
+    qS += (q - qS) * Math.min(1, dt * (reduced ? 30 : 3.4));
+
+    // guide position on the climb
+    guideXZ(qS, v2);
+    const moved = v2.distanceTo(prevXZ);
+    const g = guide.root;
+    g.position.x = v2.x; g.position.z = v2.y;
+    const hy = heightAt(v2.x, v2.y);
+    g.position.y += (hy - g.position.y) * Math.min(1, dt * 16);
+    guide.st.speed += ((moved / Math.max(dt, 1e-3)) - guide.st.speed) * 0.2;
+    let yawT;
+    if (moved > 0.004) yawT = Math.atan2(v2.x - prevXZ.x, v2.y - prevXZ.y);
+    else yawT = Math.atan2(camera.position.x - g.position.x, camera.position.z - g.position.z);
+    let dy = yawT - g.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+    g.rotation.y += dy * Math.min(1, dt * 7);
+    prevXZ.copy(v2);
+    guide.st.look.set(mouse.x * 0.6, mouse.y * 0.5);
+    guide.st.talk = ui.talking() ? 1 : 0;
+
+    // camera along the rig
+    const u = THREE.MathUtils.clamp(qS / (N - 1), 0, 1);
+    posCurve.getPoint(u, camera.position); tgtCurve.getPoint(u, look);
+    if (intro.k > 0) camera.position.lerp(introFrom, intro.k * intro.k);
+    camera.position.x += mouse.x * 0.35; camera.position.y += mouse.y * 0.2;
+    camera.lookAt(look);
+    // compose: push the subject away from the panel
+    const lo = Math.floor(qS), hi = Math.min(lo + 1, N - 1), f = qS - lo;
+    const want = isNarrow() ? 0.5 : THREE.MathUtils.lerp(shift[lo], shift[hi], f);
+    offsetS += (want - offsetS) * Math.min(1, dt * 5);
+    const W = innerWidth, Hh = innerHeight, extra = isNarrow() ? 0 : 0.42;
+    if (extra) camera.setViewOffset(W * (1 + extra), Hh, W * extra * offsetS, 0, W, Hh); else camera.setViewOffset(W, Hh * 1.5, 0, Hh * 0.4, W, Hh);
+
+    // level arrival -> the guide speaks
+    const near = Math.round(qS);
+    if (Math.abs(qS - near) < 0.02) settleT += dt; else settleT = 0;
+    if (settleT > 0.25 && lastSpoken !== near) {
+      lastSpoken = near; ui.lines(LINES[lang][near]); guide.setMode(MODES[near]);
+    }
+    if (Math.abs(qS - lastSpoken) > 0.18 && lastSpoken !== -1) { lastSpoken = -1; ui.hide(); if (guide.st.mode !== 'celebrate') guide.setMode('idle'); }
+    if (near !== curLevel) { curLevel = near; ui.level(near); ui.avoid(sections[near]); }
+
+    world.packetBoost = Math.max(world.packetBoost, Math.min(1, Math.abs(lenis.velocity || 0) / 60));
+    world.update(t, dt, camera);
+    guide.update(dt, t);
+
+    // bubble follows the head
+    const head = guide.headAnchor(); tmp.copy(head).project(camera);
+    ui.place((tmp.x * 0.5 + 0.5) * innerWidth, (-tmp.y * 0.5 + 0.5) * innerHeight, tmp.z < 1);
+
+    if ((hoverTick = (hoverTick + 1) % 6) === 0) {
+      ray.setFromCamera(mouse, camera); const hit = ray.intersectObject(guide.root, true).length > 0;
+      if (hit !== hovering) { hovering = hit; canvas.style.cursor = hit ? 'pointer' : ''; }
+      ui.hint(hit, (tmp.x * 0.5 + 0.5) * innerWidth, (-tmp.y * 0.5 + 0.5) * innerHeight);
+    }
+
+    if (useComposer) composer.render(dt); else renderer.render(scene, camera);
+
+    // adaptive quality after warm-up
+    frames++;
+    if (!perfChecked && frames > 30) { slowAcc += dt; if (frames > 120) { perfChecked = true; const avg = slowAcc / 90; if (avg > 0.03) { dpr = 1; renderer.setPixelRatio(1); resize(); if (avg > 0.045) { useComposer = false; renderer.shadowMap.enabled = false; } } } }
+  }
+  gsap.ticker.add(frame);
+  if (location.hash === '#debug') window.__dbg = () => ({ qS, q: scrollQ(), lastSpoken, settleT, mode: guide.st.mode, speed: guide.st.speed, pos: guide.root.position.toArray().map((n) => +n.toFixed(2)), scroll: lenis.scroll, bounds });
+
+  // ---------- reveal ----------
+  await new Promise((r) => { if (total <= loaded) r(); manager.onLoad = r; setTimeout(r, 6000); });
+  setPct(1);
+  setTimeout(() => {
+    $('#loader').classList.add('done');
+    decodeName(); revealPanels();
+    if (!reduced) gsap.to(intro, { k: 0, duration: 3.2, ease: 'power3.inOut', onComplete: () => { if (Math.round(qS) === 0) { lastSpoken = -1; } } });
+  }, 350);
+}
+
+// ---------- loader progress ----------
+function setPct(p) {
+  const steps = document.querySelectorAll('.ld-s'); const k = Math.round(p * steps.length);
+  steps.forEach((s, i) => s.classList.toggle('on', i < k));
+  const el = $('#ld-pct'); if (el) el.textContent = `${Math.round(p * 100)}%`;
+}
+setPct(0.15);
+
+// ---------- panel reveals ----------
+function revealPanels() {
+  if (reduced) return;
+  document.querySelectorAll('.sec:not(#hero) .panel').forEach((p) => {
+    const h2 = p.querySelector('h2');
+    const split = h2 ? SplitText.create(h2, { type: 'words', mask: 'words' }) : null;
+    const tl = gsap.timeline({ scrollTrigger: { trigger: p, start: 'top 82%', toggleActions: 'play none none reverse' } });
+    tl.from(p, { y: 60, opacity: 0, duration: 0.9, ease: 'power3.out' });
+    if (split) tl.from(split.words, { yPercent: 110, duration: 0.7, stagger: 0.06, ease: 'power3.out' }, 0.15);
+    const bits = p.querySelectorAll('.facts li,.chips span,.proj,.arena li,.certs li,.bench li,.pipe li');
+    if (bits.length) tl.from(bits, { y: 14, opacity: 0, duration: 0.5, stagger: 0.03, ease: 'power2.out' }, 0.3);
+  });
+  gsap.from('.hero-panel > :not(h1)', { y: 24, opacity: 0, duration: 1, stagger: 0.12, ease: 'power3.out', delay: 0.5 });
+}
+
+// ---------- UI: bubble, minimap, language, terminal, contact ----------
+function setupUI() {
+  const bubble = $('#bubble'), text = $('#bubble-text'), next = $('#bubble-next'), hintEl = $('#poke-hint');
+  let queue = [], idx = 0, typing = null, talking = false, autoT = null, tempT = null, visible = false;
+  const api = { onSend: null, onLang: null, onPoke: null };
+
+  function typeLine(s) {
+    clearTimeout(autoT); if (typing) typing.kill();
+    text.innerHTML = ''; const ghost = document.createElement('span'); ghost.className = 'ghost'; ghost.textContent = s; const typed = document.createElement('span'); typed.className = 'typed'; text.append(ghost, typed); talking = true;
+    bubble.hidden = false; bubble.dir = lang === 'ar' ? 'rtl' : 'ltr'; bubble.lang = lang;
+    if (!visible) { visible = true; gsap.fromTo(bubble, { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.35, ease: 'back.out(2)' }); }
+    const chars = Array.from(s), o = { n: 0 };
+    typing = gsap.to(o, {
+      n: chars.length, duration: reduced ? 0 : Math.min(2.6, chars.length * 0.028), ease: 'none',
+      onUpdate: () => (typed.textContent = chars.slice(0, Math.round(o.n)).join('')),
+      onComplete: () => { talking = false; typed.textContent = s; if (idx < queue.length - 1) autoT = setTimeout(() => advance(), 2600); },
+    });
+  }
+  function advance() { if (idx < queue.length - 1) { idx++; typeLine(queue[idx]); } else if (queue.length) { idx = 0; typeLine(queue[0]); } }
+  next.addEventListener('click', () => { clearTimeout(tempT); advance(); });
+  bubble.addEventListener('click', (e) => { if (e.target === bubble || e.target === text) { clearTimeout(tempT); advance(); } });
+
+  api.lines = (arr) => { clearTimeout(tempT); queue = arr; idx = 0; typeLine(arr[0]); };
+  api.say = (s, { temp } = {}) => {
+    const resume = queue.slice(); const at = idx;
+    typeLine(s);
+    clearTimeout(tempT);
+    if (temp && resume.length) tempT = setTimeout(() => { queue = resume; idx = at; typeLine(queue[idx]); }, 3200);
+  };
+  api.hide = () => { clearTimeout(autoT); if (!visible) return; visible = false; talking = false; if (typing) typing.kill(); gsap.to(bubble, { scale: 0.7, opacity: 0, duration: 0.2, onComplete: () => { if (!visible) bubble.hidden = true; } }); };
+  api.talking = () => talking;
+  let bw = 0, bh = 0, avoidEl = null, avoidSide = '';
+  api.avoid = (sec) => { avoidEl = sec ? sec.querySelector('.panel') : null; avoidSide = sec ? sec.dataset.side : ''; };
+  api.place = (x, y, ok) => {
+    if (bubble.hidden) return;
+    bw = bubble.offsetWidth; bh = bubble.offsetHeight;
+    let left = x - 40, top = y - bh - 22, below = false;
+    if (top < 76) { top = y + 34; below = true; }
+    if (avoidEl && innerWidth > 820) {
+      const r = avoidEl.getBoundingClientRect();
+      if (r.bottom > top && r.top < top + bh) {
+        if (avoidSide === 'left' && left < r.right + 14) left = r.right + 14;
+        if (avoidSide === 'right' && left + bw > r.left - 14) left = r.left - bw - 14;
+      }
+    }
+    left = Math.max(12, Math.min(innerWidth - bw - 12, left));
+    top = Math.max(70, Math.min(innerHeight - bh - 12, top));
+    bubble.classList.toggle('below', below);
+    bubble.style.setProperty('--tail', `${Math.max(22, Math.min(bw - 22, x - left))}px`);
+    bubble.style.transform = `translate(${left}px,${top}px)`;
+    bubble.style.visibility = ok ? 'visible' : 'hidden';
+  };
+  api.hint = (on, x, y) => { hintEl.classList.toggle('on', on && !visible); if (on) hintEl.style.transform = `translate(${x + 30}px,${y + 40}px)`; };
+
+  // minimap
+  const mini = $('#mini'), label = $('#mini-label');
+  const widths = [86, 74, 62, 50, 38, 26, 14];
+  mini.innerHTML = widths.map((w, i) => `<rect data-i="${i}" x="${(90 - w) / 2}" y="${128 - i * 19}" width="${w}" height="16" rx="2"><title>${LEVEL_NAMES[i]}</title></rect>`).join('');
+  mini.querySelectorAll('rect').forEach((r) => r.addEventListener('click', () => goTo(+r.dataset.i)));
+  const navLinks = document.querySelectorAll('.links a');
+  api.level = (L) => {
+    mini.querySelectorAll('rect').forEach((r, i) => { r.classList.toggle('on', i === L); r.classList.toggle('done', i < L); });
+    label.textContent = LEVEL_NAMES[L];
+    navLinks.forEach((a) => a.classList.toggle('on', +a.dataset.go === L));
+  };
+
+  // language
+  const langBtn = $('#lang');
+  const syncLang = () => { langBtn.textContent = lang === 'ar' ? 'EN' : 'ع'; langBtn.setAttribute('aria-label', lang === 'ar' ? 'Switch the guide to English' : 'Switch the guide to Egyptian Arabic'); document.documentElement.classList.toggle('ar', lang === 'ar'); };
+  langBtn.addEventListener('click', () => { lang = lang === 'ar' ? 'en' : 'ar'; try { localStorage.setItem('adham-guide-lang', lang); } catch (e) {} syncLang(); api.onLang && api.onLang(); });
+  syncLang();
+
+  // contact request composer
+  const f = { name: $('#f-name'), role: $('#f-role'), msg: $('#f-msg') }, pre = $('#req-preview'), status = $('#req-status');
+  const esc = (s) => JSON.stringify(s);
+  const render = () => { pre.textContent = `POST /api/hire HTTP/1.1\nHost: adham107harp.github.io\nContent-Type: application/json\n\n{\n  "from": ${esc(f.name.value || 'you')},\n  "about": ${esc(f.role.value || 'an opportunity')},\n  "message": ${esc((f.msg.value || '…').slice(0, 140))}\n}`; };
+  Object.values(f).forEach((i) => i.addEventListener('input', render)); render();
+  const EMAIL = 'adhamharp994@gmail.com';
+  $('#req').addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!f.msg.value.trim()) { status.textContent = '400 Bad Request: the message is empty.'; f.msg.focus(); return; }
+    const subject = `${f.role.value || 'Hello'} — from ${f.name.value || 'your portfolio'}`;
+    const href = `mailto:${EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(f.msg.value)}`;
+    status.textContent = `201 Created. Your mail app should open; if it doesn't, write to ${EMAIL}.`;
+    api.onSend && api.onSend();
+    setTimeout(() => { location.href = href; }, 900);
+  });
+  $('#copy-mail').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(EMAIL); status.textContent = `Copied ${EMAIL}`; } catch (e) { status.textContent = EMAIL; }
+  });
+
+  // terminal
+  const term = $('#term'), out = $('#term-out'), input = $('#term-in');
+  const print = (s, cls = '') => { const d = document.createElement('div'); if (cls) d.className = cls; d.textContent = s; out.appendChild(d); out.scrollTop = out.scrollHeight; };
+  const sectionsByName = { home: 0, hero: 0, about: 1, stack: 2, work: 3, projects: 3, research: 4, arena: 5, contact: 6 };
+  const cmds = {
+    help: () => 'commands: whoami · ls · cat about · projects · research · arena · contact · goto <section> · lang ar|en · poke · sudo hire adham · clear · exit',
+    whoami: () => 'Adham Harp — AI & Data Science student @ Badya University, backend developer (Node.js, PostgreSQL, C++).',
+    ls: () => 'about/  stack/  work/  research/  arena/  contact/  capstone.gold',
+    'cat about': () => 'Backend first, AI on top. Builds APIs, databases and the logic behind products. Class of 2028.',
+    projects: () => 'SmartHabbit (backend) · BU-LabTrack (backend API) · CAPCOM: Storm Watch (NASA Space Apps) · Shubha (in progress) · Sentinel FDS · The RSA Heist',
+    research: () => 'IoT Sentinel: XGBoost + Isolation Forest + decision fusion → 4-tier risk. IEEE Xplore, ITC-Egypt 2026.',
+    arena: () => 'ICPC ECPC quals: 88th (2025), 177th (2026). 248+ Codeforces problems. Next: ODC Champions, 3 Dec.',
+    contact: () => `email: ${EMAIL}\ngithub: adham107harp\nlinkedin: adham-harp-43bb6232b`,
+    poke: () => { api.onPoke && api.onPoke(); return 'ouch. he says hi.'; },
+    'sudo hire adham': () => { setTimeout(() => { closeTerm(); goTo(6); setTimeout(() => api.onSend && api.onSend(), 2800); }, 900); return '[sudo] permission granted. 201 Created — taking you to the capstone…'; },
+    clear: () => { out.textContent = ''; return null; },
+    exit: () => { closeTerm(); return null; },
+  };
+  function run(raw) {
+    const c = raw.trim().replace(/\s+/g, ' ').toLowerCase(); if (!c) return;
+    print(`$ ${raw}`, 'c');
+    if (c.startsWith('goto ')) { const k = sectionsByName[c.slice(5)]; if (k === undefined) return print(`no such section: ${c.slice(5)}`, 'e'); closeTerm(); goTo(k); return; }
+    if (c.startsWith('lang ')) { const l = c.slice(5); if (l !== 'ar' && l !== 'en') return print('lang ar | lang en', 'e'); lang = l; try { localStorage.setItem('adham-guide-lang', lang); } catch (e) {} syncLang(); api.onLang && api.onLang(); return print(`guide speaks ${l === 'ar' ? 'Egyptian Arabic' : 'English'} now.`); }
+    if (c === 'sudo rm -rf /') return print('nice try. the pyramid has stood for 4,600 years.', 'e');
+    const fn = cmds[c]; if (!fn) return print(`command not found: ${c}. try "help".`, 'e');
+    const r = fn(); if (r) print(r);
+  }
+  function openTerm() { term.hidden = false; if (!out.textContent) print('Welcome to adham@saqqara. Type "help".'); setTimeout(() => input.focus(), 30); lenis.stop(); }
+  function closeTerm() { term.hidden = true; lenis.start(); $('#term-btn').focus(); }
+  $('#term-btn').addEventListener('click', openTerm);
+  $('#term-close').addEventListener('click', closeTerm);
+  term.addEventListener('click', (e) => { if (e.target === term) closeTerm(); });
+  $('#term-form').addEventListener('submit', (e) => { e.preventDefault(); run(input.value); input.value = ''; });
+  addEventListener('keydown', (e) => {
+    const typingField = /INPUT|TEXTAREA/.test(document.activeElement?.tagName);
+    if (e.key === 'Escape' && !term.hidden) closeTerm();
+    else if ((e.key === '`' || e.key === '~') && !typingField) { e.preventDefault(); term.hidden ? openTerm() : closeTerm(); }
+  });
+
+  return api;
+}

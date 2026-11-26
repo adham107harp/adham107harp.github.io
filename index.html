@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adham Harp · Backend & AI</title>
+<meta name="description" content="Adham Harp — AI & Data Science student at Badya University and backend developer (Node.js, PostgreSQL, C++). A 3D portfolio built as a step pyramid: one layer of the stack per step.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%222%22 y=%2224%22 width=%2228%22 height=%226%22 fill=%22%23d9b382%22/%3E%3Crect x=%226%22 y=%2217%22 width=%2220%22 height=%226%22 fill=%22%23d9b382%22/%3E%3Crect x=%2210%22 y=%2210%22 width=%2212%22 height=%226%22 fill=%22%23d9b382%22/%3E%3Cpath d=%22M12 9 16 2 20 9z%22 fill=%22%23e9b44c%22/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;700&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&family=Noto+Sans+Egyptian+Hieroglyphs&family=Unbounded:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="scene" aria-hidden="true"></canvas>
+<div id="fallback" aria-hidden="true"></div>
+
+<!-- loader -->
+<div id="loader" role="status" aria-live="polite">
+  <svg viewBox="0 0 220 130" class="ld-pyr" aria-hidden="true">
+    <rect class="ld-s" x="10" y="108" width="200" height="18"/>
+    <rect class="ld-s" x="28" y="89" width="164" height="18"/>
+    <rect class="ld-s" x="46" y="70" width="128" height="18"/>
+    <rect class="ld-s" x="64" y="51" width="92" height="18"/>
+    <rect class="ld-s" x="82" y="32" width="56" height="18"/>
+    <rect class="ld-s" x="96" y="13" width="28" height="18"/>
+  </svg>
+  <p class="ld-txt">Laying the stones <span id="ld-pct">0%</span></p>
+</div>
+
+<!-- top bar -->
+<header class="bar">
+  <a href="#hero" class="brand" data-go="0" aria-label="Back to top">
+    <svg viewBox="0 0 64 30" aria-hidden="true"><rect x="2" y="2" width="60" height="26" rx="13"/><line x1="62" y1="6" x2="62" y2="24"/></svg>
+    <span>Adham&nbsp;Harp</span>
+  </a>
+  <nav class="links" aria-label="Sections">
+    <a href="#about" data-go="1">About</a>
+    <a href="#stack" data-go="2">Stack</a>
+    <a href="#work" data-go="3">Work</a>
+    <a href="#research" data-go="4">Research</a>
+    <a href="#arena" data-go="5">Arena</a>
+    <a href="#contact" data-go="6">Contact</a>
+  </nav>
+  <div class="tools">
+    <button id="lang" class="chip-btn" aria-label="Switch the guide's language to Arabic" title="Guide language">ع</button>
+    <button id="term-btn" class="chip-btn mono" aria-label="Open terminal" title="Terminal (press ` )">&gt;_</button>
+  </div>
+</header>
+
+<!-- side mini pyramid -->
+<nav class="minimap" aria-label="Pyramid levels">
+  <svg viewBox="0 0 90 150" id="mini" aria-hidden="true"></svg>
+  <p id="mini-label">Ground</p>
+</nav>
+
+<!-- speech bubble of mini-Adham -->
+<div id="bubble" aria-live="polite" hidden>
+  <p id="bubble-text"></p>
+  <button id="bubble-next" aria-label="Next line">›</button>
+</div>
+<div id="poke-hint">Click mini-Adham</div>
+
+<main id="content">
+
+<section id="hero" class="sec" data-side="left">
+  <div class="panel hero-panel">
+    <p class="kicker">AI &amp; Data Science · Badya University · Egypt</p>
+    <h1 id="name" aria-label="Adham Harp">Adham Harp</h1>
+    <p class="lead">Backend developer. I build the APIs, databases and data logic behind products, and I test them until they hold. This page is a step pyramid: every step is one layer of what I do.</p>
+    <div class="cta">
+      <a class="btn gold" href="#about" data-go="1">Climb the stack</a>
+      <a class="btn" href="https://github.com/adham107harp" target="_blank" rel="noopener">GitHub</a>
+      <a class="btn" href="https://www.linkedin.com/in/adham-harp-43bb6232b" target="_blank" rel="noopener">LinkedIn</a>
+    </div>
+    <p class="status"><span class="dot"></span>Open to backend &amp; AI internships · Cairo, on-site</p>
+  </div>
+  <p class="scroll-hint">Scroll to climb</p>
+</section>
+
+<section id="about" class="sec" data-side="right">
+  <div class="panel">
+    <p class="step-no">Step 1 · Foundation</p>
+    <h2>Backend first, AI on top</h2>
+    <p>I'm an AI &amp; Data Science student at Badya University (expected graduation 2028), focused on backend development. I build full-stack and desktop applications with Node.js, PostgreSQL, React and C++.</p>
+    <p>My main project, <strong>SmartHabbit</strong>, is a gamified habit tracker where I worked mainly on the backend: JWT authentication, real-time chat over socket.io, Docker and an automated jest test suite. I also co-authored an IoT security paper now on IEEE Xplore, and I practise problem solving in ICPC contests and on Codeforces.</p>
+    <ul class="facts">
+      <li><b>2028</b><span>expected graduation</span></li>
+      <li><b>IEEE</b><span>Xplore co-author</span></li>
+      <li><b>248+</b><span>Codeforces problems</span></li>
+      <li><b>2×</b><span>ICPC ECPC qualifier</span></li>
+    </ul>
+  </div>
+</section>
+
+<section id="stack" class="sec" data-side="left">
+  <div class="panel">
+    <p class="step-no">Step 2 · Stack</p>
+    <h2>The tools orbiting my desk</h2>
+    <div class="groups">
+      <div><h3>Languages</h3><p class="chips"><span>C++</span><span>TypeScript</span><span>JavaScript</span><span>Python</span><span>SQL</span><span>Java</span><span>C#</span></p></div>
+      <div><h3>Backend</h3><p class="chips"><span>Node.js</span><span>Express</span><span>REST APIs</span><span>JWT auth</span><span>socket.io</span></p></div>
+      <div><h3>Data</h3><p class="chips"><span>PostgreSQL</span><span>SQLite</span><span>MySQL</span><span>XGBoost</span><span>Isolation Forest</span><span>Power BI</span></p></div>
+      <div><h3>Frontend &amp; tools</h3><p class="chips"><span>React</span><span>three.js</span><span>Docker</span><span>Git</span><span>Jest</span><span>Postman</span><span>Qt</span><span>Vercel</span></p></div>
+    </div>
+    <h3 class="sub">How I build</h3>
+    <ul class="how">
+      <li><b>Tested.</b> SmartHabbit runs jest + supertest integration tests against a scratch PostgreSQL database.</li>
+      <li><b>Hardened.</b> Rate-limited login, uploads checked by magic bytes, a strict CORS allowlist, a non-root Docker image.</li>
+      <li><b>Runnable.</b> One-command start scripts, a demo mode with sample data, READMEs a stranger can follow.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="work" class="sec tall" data-side="right">
+  <div class="panel wide">
+    <p class="step-no">Step 3 · Work</p>
+    <h2>Things I've shipped</h2>
+    <article class="proj">
+      <div class="proj-top"><h3>SmartHabbit</h3><span class="tag">Team project · backend</span></div>
+      <p>A gamified habit tracker: XP, streaks, 50 badges, a reward shop whose items all work, friends, leaderboards and real-time chat. I built most of the Node.js + PostgreSQL backend.</p>
+      <ul class="mini">
+        <li>JWT access + refresh tokens, bcrypt, 11 SQL migrations that run on boot</li>
+        <li>socket.io chat and notifications sharing the same CORS allowlist as HTTP</li>
+        <li>Login limited to 5 attempts per 15 minutes; avatars validated by magic bytes</li>
+      </ul>
+      <p class="chips sm"><span>Node.js</span><span>Express</span><span>TypeScript</span><span>PostgreSQL</span><span>socket.io</span><span>Docker</span><span>Jest</span></p>
+      <p class="links-row"><a href="https://github.com/adham107harp/SmartHabbit" target="_blank" rel="noopener">Code</a><span class="team">With Mariam Ragheb, Rawan Ibrahim, Abdelrahman Ahmed</span></p>
+    </article>
+    <article class="proj">
+      <img src="assets/shots/student-dashboard.webp" alt="BU-LabTrack student dashboard" loading="lazy" width="1280" height="800">
+      <div class="proj-top"><h3>BU-LabTrack</h3><span class="tag">Team project · backend API</span></div>
+      <p>Lab management for Badya University with four roles: students reserve equipment and share tools, instructors approve, technicians handle maintenance, doctors follow research labs. I worked mainly on the backend API; the repo also ships a demo mode so anyone can try every screen.</p>
+      <p class="chips sm"><span>REST API</span><span>JWT</span><span>React 18</span><span>TypeScript</span><span>Tailwind</span></p>
+      <p class="links-row"><a href="https://adham107harp.github.io/BU-LabTrack/" target="_blank" rel="noopener">Live demo</a><a href="https://github.com/adham107harp/BU-LabTrack" target="_blank" rel="noopener">Code</a></p>
+    </article>
+    <article class="proj">
+      <img src="assets/shots/title.jpg" alt="CAPCOM: Storm Watch title screen" loading="lazy" width="960" height="540">
+      <div class="proj-top"><h3>CAPCOM: Storm Watch</h3><span class="tag">NASA Space Apps 2026</span></div>
+      <p>A three.js game for kids 7–12: you are mission control, guiding Moon and Mars crews through four real solar storms from NASA DONKI records, plus a live panel of the last 30 days of space weather. A Vercel function reads NASA's API server-side so the key stays secret.</p>
+      <p class="chips sm"><span>three.js</span><span>JavaScript</span><span>NASA DONKI</span><span>Vercel functions</span></p>
+      <p class="links-row"><a href="https://capcom-storm-watch.vercel.app/" target="_blank" rel="noopener">Play it</a><a href="https://github.com/adham107harp/capcom-storm-watch" target="_blank" rel="noopener">Code</a><span class="team">With Rawan Ibrahim, Mariam Ragheb</span></p>
+    </article>
+    <h3 class="sub">On the workbench</h3>
+    <ul class="bench">
+      <li><b>Shubha (شُبهة)</b> <span class="tag live">In progress</span> Mobile-wallet fraud detection on PaySim data, Naive Bayes plus rules, API-first. I'm the project manager of a team of four; demo day is 23 Dec 2026.</li>
+      <li><b>Sentinel FDS</b> <span class="tag">Course</span> A fraud-detection desktop app in C++17, Qt 6 and SQLite for the Data Structures course.</li>
+      <li><b>The RSA Heist</b> <span class="tag live">In progress</span> A digital evidence vault plus three RSA attack challenges, for Number Theory &amp; Cryptography.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="research" class="sec" data-side="left">
+  <div class="panel">
+    <p class="step-no">Step 4 · Research</p>
+    <h2>Two pipelines, one risk score</h2>
+    <p class="paper"><a href="https://ieeexplore.ieee.org/document/11765840" target="_blank" rel="noopener">A Modular Dual-Pipeline Anomaly Detection Architecture for IoT Security: Combining Gradient Boosting, Isolation Forest, and Decision Fusion</a></p>
+    <p class="meta">ITC-Egypt 2026, Cairo · IEEE Xplore · with Tasneem Saleh, Khaled Elhosiny and Marwa Anany</p>
+    <ol class="pipe">
+      <li><b>Device sensors</b> go through a supervised XGBoost pipeline.</li>
+      <li><b>Network traffic</b> goes through an unsupervised Isolation Forest.</li>
+      <li><b>Decision fusion</b> merges both into a four-tier risk score.</li>
+    </ol>
+    <p>My part: auditing the paper against its notebook before submission, running the revisions after peer review, adding the fusion-ablation and sensitivity experiments, and building the conference deck.</p>
+    <h3 class="sub">Next paper</h3>
+    <p>Weight-based toll collection for Egyptian roads (الكارتة): plate recognition, vehicle tracking and weigh-in-motion, with charges deducted from a balance. I'm writing the software side with Tasneem Saleh, supervised by Dr. Marwa.</p>
+  </div>
+</section>
+
+<section id="arena" class="sec" data-side="right">
+  <div class="panel">
+    <p class="step-no">Step 5 · Arena</p>
+    <h2>Contests, balloons and a rocket</h2>
+    <ul class="arena">
+      <li><b>88th</b><span>ICPC ECPC Qualifications 2025, Day 2 · Badya University</span></li>
+      <li><b>177th</b><span>ICPC ECPC Qualifications 2026</span></li>
+      <li><b>248+</b><span>problems solved on <a href="https://codeforces.com/profile/a.mohammed22" target="_blank" rel="noopener">Codeforces</a></span></li>
+      <li><b>2026</b><span>NASA Space Apps Challenge, team of five, CAPCOM: Storm Watch</span></li>
+    </ul>
+    <p class="next"><b>Next:</b> ODC Champions 2026 national qualifiers on CodinGame, 3 December, team of three.</p>
+    <h3 class="sub">Certificates</h3>
+    <ul class="certs">
+      <li><span>Computer Networks V1.0</span><em>Huawei ICT Academy · Oct 2026</em></li>
+      <li><span>Introduction to Power BI</span><em>DataCamp · Oct 2026</em></li>
+      <li><span>Java (Basic)</span><em>HackerRank · Oct 2025</em></li>
+      <li><span>C Programming From Basics to Mastery</span><em>ITI / Mahara-Tech · Aug 2025</em></li>
+      <li><span>Java DevBelt, Yellow Belt: Mastering OOP (45 h)</span><em>ITI · Jul 2025</em></li>
+      <li><span>DataCamp × Flashat scholarship</span><em>2026</em></li>
+    </ul>
+    <p class="links-row"><a href="https://drive.google.com/drive/folders/1aJtpq_AU3GCCMX9621kTkxoQukBJ0SI-?usp=sharing" target="_blank" rel="noopener">All certificates</a></p>
+  </div>
+</section>
+
+<section id="contact" class="sec" data-side="left">
+  <div class="panel contact">
+    <p class="step-no">The capstone · Contact</p>
+    <h2>Send a request to the top</h2>
+    <form id="req" novalidate>
+      <div class="row">
+        <label>Your name<input id="f-name" name="name" autocomplete="name" placeholder="Recruiter at a great company"></label>
+        <label>Role or topic<input id="f-role" name="role" placeholder="Backend internship"></label>
+      </div>
+      <label>Message<textarea id="f-msg" name="msg" rows="3" placeholder="Hi Adham, we'd like to talk about…"></textarea></label>
+      <pre id="req-preview" class="mono" aria-label="Request preview"></pre>
+      <div class="cta">
+        <button class="btn gold" type="submit">Send request</button>
+        <button class="btn" type="button" id="copy-mail">Copy email</button>
+      </div>
+      <p id="req-status" class="req-status" aria-live="polite"></p>
+    </form>
+    <ul class="contact-links">
+      <li><span>Email</span><a href="mailto:adhamharp994@gmail.com">adhamharp994@gmail.com</a></li>
+      <li><span>GitHub</span><a href="https://github.com/adham107harp" target="_blank" rel="noopener">adham107harp</a></li>
+      <li><span>LinkedIn</span><a href="https://www.linkedin.com/in/adham-harp-43bb6232b" target="_blank" rel="noopener">adham-harp</a></li>
+      <li><span>Kaggle</span><a href="https://www.kaggle.com/adhamharp" target="_blank" rel="noopener">adhamharp</a></li>
+    </ul>
+  </div>
+  <footer>Built by Adham Harp with three.js, GSAP and Lenis. Every shape is code: no 3D models were harmed.</footer>
+</section>
+
+</main>
+
+<!-- terminal -->
+<div id="term" role="dialog" aria-modal="true" aria-label="Terminal" hidden>
+  <div class="term-win">
+    <div class="term-bar"><span>adham@saqqara:~</span><button id="term-close" aria-label="Close terminal">×</button></div>
+    <div id="term-out" class="mono"></div>
+    <form id="term-form" class="mono"><label for="term-in">$</label><input id="term-in" autocomplete="off" spellcheck="false" aria-label="Command"></form>
+  </div>
+</div>
+
+<script src="dist/app.js" type="module"></script>
+</body>
+</html>
