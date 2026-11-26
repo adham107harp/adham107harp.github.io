@@ -169,10 +169,10 @@ export function buildWorld(scene, renderer, loadingManager, quality = 'high') {
 
   // ---- the step pyramid ----
   const pyr = new THREE.Group(); scene.add(pyr); world.pyramid = pyr;
-  const stripMat = glow(PAL.faience, 1.7);
+  const stripMat = glow(PAL.faience, 1.0);
   for (let i = 0; i < S.length; i++) {
     const s = S[i];
-    const side = std(0xffffff, { ...withRepeat(sideSet, s / 7, 1), emissiveMap: (() => { const t = circuitCanvas(91 + i * 7); t.repeat.set(s / 14, 1); return t; })(), emissive: new THREE.Color(PAL.faience), emissiveIntensity: 0.38, normalScale: new THREE.Vector2(1.0, 1.0) });
+    const side = std(0xffffff, { ...withRepeat(sideSet, s / 7, 1), emissiveMap: (() => { const t = circuitCanvas(91 + i * 7); t.repeat.set(s / 14, 1); return t; })(), emissive: new THREE.Color(0x3fb8ae), emissiveIntensity: 0.18, normalScale: new THREE.Vector2(1.0, 1.0) });
     const top = std(0xf0e4d4, { ...withRepeat(topSet, s / 7, s / 7) });
     const step = new THREE.Mesh(new THREE.BoxGeometry(s, H, s), [side, side, top, top, side, side]);
     step.position.y = i * H + H / 2; step.castShadow = step.receiveShadow = true; pyr.add(step);
@@ -192,7 +192,7 @@ export function buildWorld(scene, renderer, loadingManager, quality = 'high') {
     }
     for (const sx of [-1.42, 1.42]) {
       const a = new THREE.Vector3(sx, y0 + 0.35, face + FLIGHT), bb = new THREE.Vector3(sx, y0 + H + 0.35, face);
-      const len = a.distanceTo(bb); const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, len, 8), glow(sx < 0 ? PAL.faience : PAL.gold, 1.6));
+      const len = a.distanceTo(bb); const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, len, 8), glow(sx < 0 ? PAL.faience : PAL.gold, 0.95));
       rail.position.copy(a).add(bb).multiplyScalar(0.5); rail.lookAt(bb); rail.rotateX(Math.PI / 2); pyr.add(rail);
     }
     world.stairPath.push(new THREE.Vector3(0, y0, face + FLIGHT), new THREE.Vector3(0, y0 + H, face));
@@ -210,7 +210,7 @@ export function buildWorld(scene, renderer, loadingManager, quality = 'high') {
     const curveUp = new THREE.CatmullRomCurve3(world.stairPath.map((p) => p.clone().add(new THREE.Vector3(-1.42, 0.55, 0))), false, 'centripetal', 0);
     const curveDn = new THREE.CatmullRomCurve3(world.stairPath.map((p) => p.clone().add(new THREE.Vector3(1.42, 0.55, 0))), false, 'centripetal', 0);
     const n = 36, geo = new RoundedBoxGeometry(0.14, 0.14, 0.14, 1, 0.03);
-    const reqs = new THREE.InstancedMesh(geo, glow(PAL.faience, 3), n), ress = new THREE.InstancedMesh(geo, glow(PAL.gold, 2.8), n);
+    const reqs = new THREE.InstancedMesh(geo, glow(PAL.faience, 1.4), n), ress = new THREE.InstancedMesh(geo, glow(PAL.gold, 1.3), n);
     pyr.add(reqs, ress); const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(1, 1, 1), v = new THREE.Vector3(), e = new THREE.Euler();
     world.packetBoost = 0;
     up((t) => {
@@ -237,7 +237,7 @@ export function buildWorld(scene, renderer, loadingManager, quality = 'high') {
         float w = (1.-y)*.42 + .04; float d = abs(uv.x-.5 + (nn-.5)*.25*y);
         float f = smoothstep(w, w*.35, d) * smoothstep(1., .25, y + nn*.35) * smoothstep(0.,.08,y);
         vec3 c = mix(vec3(1.5,.5,.1), vec3(1.9,1.35,.7), smoothstep(.3,.9,f*(1.2-y)));
-        gl_FragColor = vec4(c*f*.5, f); }`,
+        gl_FragColor = vec4(c*f*.32, f*.85); }`,
   });
   up((t) => (flameMat.uniforms.t.value = t));
   const bronze = new THREE.MeshPhysicalMaterial({ color: 0x8a5a2b, metalness: 0.9, roughness: 0.35 });
@@ -245,7 +245,7 @@ export function buildWorld(scene, renderer, loadingManager, quality = 'high') {
     const z = S[0] / 2 + 3.2;
     const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 2.2, 16), std(0xffffff, { ...withRepeat(sideSet, 0.3, 0.5) })); pillar.position.set(x, 1.1, z); pillar.castShadow = true; scene.add(pillar);
     const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.3, 0.4, 24, 1, true), bronze); bowl.material.side = THREE.DoubleSide; bowl.position.set(x, 2.35, z); scene.add(bowl);
-    const coals = new THREE.Mesh(new THREE.CircleGeometry(0.55, 20), glow(0xff5a1a, 1.2)); coals.rotation.x = -Math.PI / 2; coals.position.set(x, 2.45, z); scene.add(coals);
+    const coals = new THREE.Mesh(new THREE.CircleGeometry(0.55, 20), glow(0xff5a1a, 0.7)); coals.rotation.x = -Math.PI / 2; coals.position.set(x, 2.45, z); scene.add(coals);
     const fl = new THREE.Group(); fl.position.set(x, 2.45, z); scene.add(fl);
     for (let k = 0; k < 3; k++) { const p = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.8), flameMat); p.position.y = 0.85; p.rotation.y = (k / 3) * Math.PI; fl.add(p); }
     const light = new THREE.PointLight(0xff8a3c, 6, 12, 1.8); light.position.set(x, 3.4, z + 0.3); scene.add(light);
@@ -304,70 +304,82 @@ function buildProps(world, pyr, lm) {
     g.rotation.y = 0.5; world.props.desk = g;
   }
 
-  // L2 — stack: orbiting cartouches around a faience core
+  // L2 — stack: a brass astrolabe standing on the ledge; tool plaques ride two counter-rotating rings
   {
-    const g = new THREE.Group(); g.position.set(5.8, levelY(2) + 3.1, ledgeZ(2) - 0.6); pyr.add(g);
-    const items = ['C++', 'TypeScript', 'Node.js', 'PostgreSQL', 'Python', 'SQL', 'Docker', 'React', 'Express', 'socket.io', 'Git', 'Java'];
-    items.forEach((s, i) => {
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(1.05, 0.33), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(textCanvas(s, { font: '700 54px Unbounded, sans-serif' })), transparent: true, side: THREE.DoubleSide, toneMapped: false }));
-      m.material.map.colorSpace = THREE.SRGBColorSpace;
-      m.userData = { a: (i / items.length) * Math.PI * 2, r: i % 2 ? 2.9 : 2.2, y: (i % 3) * 0.45 - 0.45, label: s.toLowerCase(), hl: 0 };
-      g.add(m);
-    });
-    const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 0), new THREE.MeshPhysicalMaterial({ color: 0x2fd3c6, roughness: 0.05, transmission: 0.6, thickness: 0.6, emissive: new THREE.Color(0x0d6d66), emissiveIntensity: 1.5 })); g.add(core);
+    const g = new THREE.Group(); g.position.set(7.3, levelY(2) + 2.95, ledgeZ(2) + 0.25); pyr.add(g);
+    const brass = new THREE.MeshPhysicalMaterial({ color: 0xa8865a, metalness: 1, roughness: 0.38, envMapIntensity: 1.2 });
+    const ringI = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.025, 12, 96), brass), ringO = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.032, 12, 128), brass);
+    g.add(ringI, ringO);
+    for (let k = 0; k < 4; k++) { const sp = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 4.8, 6), brass); sp.rotation.z = (k / 4) * Math.PI; g.add(sp); }
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 2.95, 12), brass); pole.position.y = -2.95 / 2; pole.castShadow = true; g.add(pole);
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.5, 0.16, 32), std(0x6d5a44, { roughness: 0.9 })); base.position.y = -2.95 + 0.08; base.castShadow = base.receiveShadow = true; g.add(base);
+    const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.3, 1), new THREE.MeshPhysicalMaterial({ color: 0x3fb8ae, roughness: 0.15, metalness: 0.1, transmission: 0.4, thickness: 0.5, emissive: new THREE.Color(0x0b4a45), emissiveIntensity: 0.8 })); g.add(core);
+    const inner = ['C++', 'Python', 'SQL', 'Java', 'Git'], outer = ['TypeScript', 'Node.js', 'PostgreSQL', 'Express', 'socket.io', 'Docker', 'React'];
+    const plaques = [];
+    const mk = (label, r, i, n, dir) => {
+      const tex = new THREE.CanvasTexture(textCanvas(label, { font: '600 52px "Instrument Sans", sans-serif', bg: 'rgba(12,16,40,1)', border: '#b8935a', fg: '#efe4cc' })); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.31), new THREE.MeshBasicMaterial({ map: tex, transparent: true, color: 0xd8d8d8 }));
+      m.userData = { a: (i / n) * Math.PI * 2, r, dir, label: label.toLowerCase(), hl: 0 }; g.add(m); plaques.push(m);
+    };
+    inner.forEach((l, i) => mk(l, 1.2, i, inner.length, 1)); outer.forEach((l, i) => mk(l, 2.4, i, outer.length, -1));
+    let rot = 0;
     up((t, dt, cam) => {
-      core.rotation.set(t * 0.6, t * 0.9, 0);
-      g.children.forEach((m) => {
-        if (!m.userData.r) return; const u = m.userData; u.hl = Math.max(0, u.hl - dt);
-        const k = Math.min(1, u.hl * 2), a = u.a + t * 0.35;
-        m.position.set(Math.cos(a) * u.r * (1 - k * 0.6), u.y + Math.sin(t + u.a) * 0.12 + k * 0.9, Math.sin(a) * u.r * (1 - k * 0.6) + k * 1.2);
-        m.scale.setScalar(1 + k * 0.9); if (cam) m.quaternion.copy(cam.quaternion);
-      });
+      rot += dt; core.rotation.set(t * 0.4, t * 0.6, 0);
+      ringI.rotation.z = rot * 0.25; ringO.rotation.z = -rot * 0.16;
+      for (const m of plaques) {
+        const u = m.userData; u.hl = Math.max(0, u.hl - dt); const k = Math.min(1, u.hl * 2);
+        const a = u.a + rot * (u.dir > 0 ? 0.25 : -0.16);
+        m.position.set(Math.cos(a) * u.r, Math.sin(a) * u.r, 0.08 + k * 0.25);
+        m.scale.setScalar(1 + k * 0.45); m.material.color.setScalar(0.85 + k * 0.15);
+        if (cam) m.quaternion.copy(cam.quaternion);
+      }
     });
     world.props.stack = g;
-    world.highlightSkill = (name) => { let hit = false; g.children.forEach((m) => { if (m.userData.label && name.toLowerCase().startsWith(m.userData.label.replace('.js', ''))) { m.userData.hl = 3; hit = true; } }); return hit; };
+    world.highlightSkill = (name) => { let hit = false; const n = name.toLowerCase(); plaques.forEach((m) => { const l = m.userData.label; if (n === l || n.startsWith(l.replace('.js', '')) || l.startsWith(n)) { m.userData.hl = 3; hit = true; } }); return hit; };
   }
 
-  // L3 — work: floating screens with real screenshots
+  // L3 — work: three monitors on stands, showing real screenshots
   {
-    const g = new THREE.Group(); g.position.set(-3.6, levelY(3) + 2.45, S[3] / 2 + 0.35); pyr.add(g);
-    const habit = document.createElement('canvas'); habit.width = 640; habit.height = 400; drawHabit(habit.getContext('2d'));
-    const shots = [{ src: 'assets/shots/title.jpg', x: -1.9, ry: 0.42 }, { canvas: habit, x: 0, ry: 0 }, { src: 'assets/shots/student-dashboard.webp', x: 1.9, ry: -0.42 }];
-    shots.forEach((s, i) => {
-      const t = s.canvas ? new THREE.CanvasTexture(s.canvas) : texLoader.load(s.src); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
-      const holder = new THREE.Group(); holder.position.set(s.x, i === 1 ? 0.35 : 0, i === 1 ? -0.4 : 0); holder.rotation.y = s.ry; g.add(holder);
-      (world.props.screens ||= {})[['capcom', 'smarthabbit', 'labtrack'][i]] = holder;
-      const f = new THREE.Mesh(new RoundedBoxGeometry(1.86, 1.1, 0.06, 2, 0.03), gold); f.castShadow = true; holder.add(f);
-      const p = new THREE.Mesh(new THREE.PlaneGeometry(1.74, 0.98), new THREE.MeshBasicMaterial({ map: t, color: 0xb8b8b8 })); p.position.z = 0.035; holder.add(p);
-      const ph = i * 1.7; up((tt) => { holder.position.y = (i === 1 ? 0.35 : 0) + Math.sin(tt * 1.1 + ph) * 0.08; });
+    const g = new THREE.Group(); g.position.set(-6.6, levelY(3), S[3] / 2 + 1.1); pyr.add(g);
+    const shell = new THREE.MeshPhysicalMaterial({ color: 0x17181f, metalness: 0.6, roughness: 0.35, clearcoat: 0.4 });
+    const alu = new THREE.MeshPhysicalMaterial({ color: 0x8c9099, metalness: 1, roughness: 0.3 });
+    const shots = [{ src: 'assets/shots/title.jpg', x: -1.95, ry: 0.18 }, { src: 'assets/shots/smarthabbit-dashboard.webp', x: 0, ry: 0 }, { src: 'assets/shots/student-dashboard.webp', x: 1.95, ry: -0.18 }];
+    shots.forEach((sh, i) => {
+      const t = sh.canvas ? new THREE.CanvasTexture(sh.canvas) : texLoader.load(sh.src); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+      const mon = new THREE.Group(); mon.position.set(sh.x, 0, 0); mon.rotation.y = sh.ry; g.add(mon);
+      const bezel = new THREE.Mesh(new RoundedBoxGeometry(1.72, 1.02, 0.07, 3, 0.03), shell); bezel.position.y = 1.72; bezel.castShadow = true; mon.add(bezel);
+      const scr = new THREE.Mesh(new THREE.PlaneGeometry(1.62, 0.92), new THREE.MeshBasicMaterial({ map: t, color: 0x9c9c9c })); scr.position.set(0, 1.72, 0.037); mon.add(scr);
+      const neck = new THREE.Mesh(new RoundedBoxGeometry(0.09, 1.2, 0.05, 1, 0.02), alu); neck.position.set(0, 0.62, -0.06); neck.castShadow = true; mon.add(neck);
+      const foot = new THREE.Mesh(new RoundedBoxGeometry(0.55, 0.03, 0.34, 2, 0.012), alu); foot.position.set(0, 0.015, -0.02); foot.castShadow = foot.receiveShadow = true; mon.add(foot);
+      (world.props.screens ||= {})[['capcom', 'smarthabbit', 'labtrack'][i]] = bezel;
     });
-    g.rotation.y = 0.12; world.props.work = g;
+    world.props.work = g;
   }
 
   // L4 — research: the dual pipeline as a hologram
   {
-    const g = new THREE.Group(); g.position.set(6.7, levelY(4) + 1.3, ledgeZ(4) - 0.6); g.rotation.y = -0.5; pyr.add(g);
-    const nodeA = new THREE.Mesh(new RoundedBoxGeometry(0.5, 0.5, 0.5, 2, 0.06), glow(PAL.faience, 2)); nodeA.position.set(-1.9, 1.7, 0);
-    const nodeB = new THREE.Mesh(new THREE.SphereGeometry(0.3, 24, 16), glow(0x6f8cff, 2.2)); nodeB.position.set(-1.9, 0.3, 0);
-    const fuse = new THREE.Mesh(new THREE.OctahedronGeometry(0.38), glow(PAL.gold, 2.6)); fuse.position.set(0.4, 1.0, 0);
+    const g = new THREE.Group(); g.position.set(5.9, levelY(4) + 1.2, ledgeZ(4) - 0.2); g.rotation.y = -0.15; g.scale.setScalar(0.6); pyr.add(g);
+    { const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.55, 0.22, 32), new THREE.MeshPhysicalMaterial({ color: 0x2a2d38, metalness: 0.8, roughness: 0.35 })); ped.position.set(5.9, levelY(4) + 0.11, ledgeZ(4) - 0.2); ped.castShadow = ped.receiveShadow = true; pyr.add(ped);
+      const lens = new THREE.Mesh(new THREE.CircleGeometry(0.3, 32), glow(PAL.faience, 0.9)); lens.rotation.x = -Math.PI / 2; lens.position.set(5.9, levelY(4) + 0.225, ledgeZ(4) - 0.2); pyr.add(lens); }
+    const nodeA = new THREE.Mesh(new RoundedBoxGeometry(0.5, 0.5, 0.5, 2, 0.06), glow(PAL.faience, 0.9)); nodeA.position.set(-1.9, 1.7, 0);
+    const nodeB = new THREE.Mesh(new THREE.SphereGeometry(0.3, 24, 16), glow(0x6f8cff, 0.9)); nodeB.position.set(-1.9, 0.3, 0);
+    const fuse = new THREE.Mesh(new THREE.OctahedronGeometry(0.38), glow(PAL.gold, 1.0)); fuse.position.set(0.4, 1.0, 0);
     g.add(nodeA, nodeB, fuse);
     const cA = new THREE.CatmullRomCurve3([nodeA.position, new THREE.Vector3(-0.8, 1.8, 0.4), fuse.position]);
     const cB = new THREE.CatmullRomCurve3([nodeB.position, new THREE.Vector3(-0.8, 0.2, 0.4), fuse.position]);
     const tiers = [[0x2fd3c6, 0.35], [0xe9b44c, 0.6], [0xf08a3c, 0.85], [0xe0473a, 1.1]];
-    const bars = tiers.map(([c, h], i) => { const b = new THREE.Mesh(new THREE.BoxGeometry(0.22, h, 0.22), glow(c, 1.8)); b.position.set(1.4 + i * 0.36, h / 2 + 0.1, 0); g.add(b); return b; });
+    const bars = tiers.map(([c, h], i) => { const b = new THREE.Mesh(new THREE.BoxGeometry(0.22, h, 0.22), glow(c, 0.85)); b.position.set(1.4 + i * 0.36, h / 2 + 0.1, 0); g.add(b); return b; });
     const out = new THREE.CatmullRomCurve3([fuse.position, new THREE.Vector3(1.2, 1.4, 0.2), new THREE.Vector3(1.9, 1.5, 0)]);
     const n = 22, geo = new THREE.SphereGeometry(0.05, 8, 6);
-    const pa = new THREE.InstancedMesh(geo, glow(PAL.faience, 3), n), pb = new THREE.InstancedMesh(geo, glow(0x8fa6ff, 3), n), po = new THREE.InstancedMesh(geo, glow(PAL.gold, 3), n);
+    const pa = new THREE.InstancedMesh(geo, glow(PAL.faience, 1.1), n), pb = new THREE.InstancedMesh(geo, glow(0x8fa6ff, 1.1), n), po = new THREE.InstancedMesh(geo, glow(PAL.gold, 1.1), n);
     g.add(pa, pb, po);
     for (const [txt, x, y] of [['XGBoost · sensors', -1.9, 2.25], ['Isolation Forest · traffic', -1.9, -0.25], ['Decision fusion', 0.4, 1.6], ['4-tier risk', 1.95, 1.55]]) {
       const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(textCanvas(txt, { w: 640, h: 120, font: '600 42px "Instrument Sans", sans-serif', radius: 60 })), transparent: true, toneMapped: false }));
-      sp.material.map.colorSpace = THREE.SRGBColorSpace; sp.scale.set(1.6, 0.3, 1); sp.position.set(x, y, 0.1); g.add(sp);
+      sp.material.map.colorSpace = THREE.SRGBColorSpace; sp.material.color.setScalar(0.8); sp.material.toneMapped = true; sp.scale.set(1.6, 0.3, 1); sp.position.set(x, y, 0.1); g.add(sp);
     }
     // holographic base disc
-    const disc = new THREE.Mesh(new THREE.RingGeometry(0.2, 2.6, 64), new THREE.MeshBasicMaterial({ color: new THREE.Color(PAL.faience).multiplyScalar(0.6), transparent: true, opacity: 0.18, side: THREE.DoubleSide, toneMapped: false, depthWrite: false }));
-    disc.rotation.x = -Math.PI / 2; disc.position.set(0, -1.25, 0); g.add(disc);
     const m = new THREE.Matrix4(), v = new THREE.Vector3();
-    g.userData.threat = 0; let th = 0, phase = 0; const calm = new THREE.Color(0x8fa6ff).multiplyScalar(3), hot = new THREE.Color(0xff3b3b).multiplyScalar(3.4), fuseCalm = new THREE.Color(PAL.gold).multiplyScalar(2.6);
+    g.userData.threat = 0; let th = 0, phase = 0; const calm = new THREE.Color(0x8fa6ff).multiplyScalar(1.1), hot = new THREE.Color(0xff4a3b).multiplyScalar(1.5), fuseCalm = new THREE.Color(PAL.gold).multiplyScalar(1.0);
     up((t, dt) => {
       th += (g.userData.threat - th) * Math.min(1, dt * 4); phase += dt * (0.22 + th * 0.6);
       pb.material.color.copy(calm).lerp(hot, th); nodeB.material.color.copy(calm).lerp(hot, th); nodeB.scale.setScalar(1 + th * 0.5 + Math.sin(t * 12) * 0.1 * th);
@@ -381,14 +393,13 @@ function buildProps(world, pyr, lm) {
       }
       pa.instanceMatrix.needsUpdate = pb.instanceMatrix.needsUpdate = po.instanceMatrix.needsUpdate = true;
       bars.forEach((b, i) => { const on = th > i * 0.25 - 0.01; b.scale.y += ((on ? 1 + th * 0.6 : 0.25) + Math.sin(t * 2 + i) * 0.06 - b.scale.y) * 0.1; });
-      disc.rotation.z = t * 0.2;
     });
     world.props.research = g;
   }
 
   // L5 — arena: ICPC balloons (click to pop) and a NASA rocket
   {
-    const g = new THREE.Group(); g.position.set(-4.4, levelY(5), ledgeZ(5) - 0.5); pyr.add(g);
+    const g = new THREE.Group(); g.position.set(-3.9, levelY(5), ledgeZ(5) - 0.45); pyr.add(g);
     const cols = [0xe0473a, 0x2fd3c6, 0xe9b44c, 0x6f8cff, 0xf6ead2];
     world.props.balloons = [];
     cols.forEach((c, i) => {
@@ -446,17 +457,3 @@ function buildProps(world, pyr, lm) {
   }
 }
 
-function drawHabit(g) {
-  g.fillStyle = '#101a3f'; g.fillRect(0, 0, 640, 400);
-  g.fillStyle = '#e9b44c'; g.font = '700 34px Unbounded, sans-serif'; g.fillText('SmartHabbit', 30, 56);
-  g.fillStyle = '#f6ead2'; g.font = '500 20px "Instrument Sans", sans-serif'; g.fillText('Level 7  ·  1,240 XP  ·  12-day streak', 30, 92);
-  g.fillStyle = '#26305e'; g.fillRect(30, 112, 580, 18); g.fillStyle = '#2fd3c6'; g.fillRect(30, 112, 410, 18);
-  const habits = [['Read 20 pages', 'easy', '+10 XP'], ['Codeforces problem', 'hard', '+40 XP'], ['Gym', 'medium', '+25 XP']];
-  habits.forEach(([n, d, x], i) => {
-    const y = 160 + i * 62; g.fillStyle = '#18234f'; g.fillRect(30, y, 580, 50);
-    g.fillStyle = '#f6ead2'; g.font = '600 22px "Instrument Sans", sans-serif'; g.fillText(n, 50, y + 32);
-    g.fillStyle = '#9fb0e8'; g.font = '500 17px "Instrument Sans", sans-serif'; g.fillText(d, 330, y + 31);
-    g.fillStyle = '#e9b44c'; g.fillText(x, 520, y + 31);
-  });
-  ['#e0473a', '#2fd3c6', '#e9b44c', '#6f8cff'].forEach((c, i) => { g.fillStyle = c; g.beginPath(); g.arc(60 + i * 56, 370, 18, 0, 7); g.fill(); });
-}

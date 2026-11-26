@@ -6,7 +6,6 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { sound } from './sound.js';
-import { loadGitHub } from './github.js';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
@@ -117,7 +116,7 @@ async function start() {
   const hud = $('#game-hud'), gS = $('#g-score'), gT = $('#g-time'), best = $('#best');
   let bestScore = 0; try { bestScore = +localStorage.getItem('adham-balloon-best') || 0; } catch (e) {}
   const showBest = () => { best.textContent = bestScore ? `Best: ${bestScore}` : ''; }; showBest();
-  $('#play').addEventListener('click', () => {
+  $('#play')?.addEventListener('click', () => {
     if (world.game.active) return;
     goTo(5); world.game.start(15); hud.hidden = false; guide.setMood('excited', 16); ui.say(L(EXTRA.gameStart), { temp: true }); sound.play('whoosh');
   });
@@ -136,15 +135,15 @@ async function start() {
   if (quality === 'high') {
     try { gtao = new GTAOPass(scene, camera, innerWidth, innerHeight); gtao.output = GTAOPass.OUTPUT.Default; gtao.blendIntensity = 0.85; gtao.updateGtaoMaterial({ radius: 0.5, distanceExponent: 1.4, thickness: 1, scale: 1.1 }); composer.addPass(gtao); } catch (e) { gtao = null; }
   }
-  const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), 0.62, 0.5, 0.92);
+  const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), 0.36, 0.4, 0.95);
   composer.addPass(bloom); composer.addPass(new OutputPass());
   const grade = new ShaderPass({
-    uniforms: { tDiffuse: { value: null }, t: { value: 0 }, amt: { value: 0.028 } },
+    uniforms: { tDiffuse: { value: null }, t: { value: 0 }, amt: { value: 0.018 } },
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }',
     fragmentShader: `uniform sampler2D tDiffuse; uniform float t, amt; varying vec2 vUv;
       float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233)) + t*7.) * 43758.5453); }
       void main(){ vec2 d = vUv-.5; float r = dot(d,d);
-        vec3 c = vec3(texture2D(tDiffuse, vUv - d*r*.005).r, texture2D(tDiffuse, vUv).g, texture2D(tDiffuse, vUv + d*r*.005).b);
+        vec3 c = texture2D(tDiffuse, vUv).rgb;
         c *= 1. - smoothstep(.15,.7,r)*.45;
         c += (h(vUv*800.)-.5)*amt;
         gl_FragColor = vec4(c,1.); }`,
@@ -165,9 +164,9 @@ async function start() {
     }
     if (L === N - 1) { camPos.push(new THREE.Vector3(-5.8, p.y + 3.1, 10.2)); camTgt.push(new THREE.Vector3(-0.4, p.y + 1.9, 0.6)); continue; }
     const side = Math.sign(p.x) || 1;
-    const k = rigNarrow ? 0.82 : 1;
-    camPos.push(new THREE.Vector3(p.x + side * 2.6 * k, p.y + 2.8 * k, p.z + 8.6 * k));
-    camTgt.push(new THREE.Vector3(p.x * 0.92 + side * 0.8, p.y + 1.6, p.z - 1));
+    const k = rigNarrow ? 0.9 : 1, propX = [0, -5.6, 7.3, -6.6, 5.9, -3.9][L], tx = p.x + (propX - p.x) * (L === 3 ? 0.6 : 0.45);
+    camPos.push(new THREE.Vector3(tx + Math.sign(propX - p.x) * 1.2, p.y + 3.0 * k, p.z + 10.5 * k));
+    camTgt.push(new THREE.Vector3(tx, p.y + 1.5, p.z - 1));
   }
   posCurve = new THREE.CatmullRomCurve3(camPos, false, 'centripetal');
   tgtCurve = new THREE.CatmullRomCurve3(camTgt, false, 'centripetal');
@@ -472,7 +471,7 @@ function setupUI() {
       status.innerHTML = ''; status.append('The relay didn\'t answer. ');
       const a = document.createElement('a'); a.href = href; a.textContent = `Email me at ${EMAIL}`; status.append(a, ' instead.');
       api.mood && api.mood('worried');
-    } finally { sending = false; btn.disabled = false; btn.textContent = 'Send request'; }
+    } finally { sending = false; btn.disabled = false; btn.textContent = 'Send message'; }
   });
   $('#copy-mail').addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(EMAIL); status.textContent = `Copied ${EMAIL}`; } catch (e) { status.textContent = EMAIL; }
@@ -488,10 +487,10 @@ function setupUI() {
     help: () => 'commands: moods · mood <name> · artifacts · whoami · ls · cat about · projects · research · arena · contact · goto <section> · lang ar|en · poke · sudo hire adham · clear · exit',
     whoami: () => 'Adham Harp — AI & Data Science student @ Badya University, backend developer (Node.js, PostgreSQL, C++).',
     ls: () => 'about/  stack/  work/  research/  arena/  contact/  capstone.gold',
-    'cat about': () => 'Backend first, AI on top. Builds APIs, databases and the logic behind products. Class of 2028.',
-    projects: () => 'SmartHabbit (backend) · BU-LabTrack (backend API) · CAPCOM: Storm Watch (NASA Space Apps) · Shubha (in progress) · Sentinel FDS · The RSA Heist',
+    'cat about': () => 'AI & Data Science student at Badya University. Backend in Node.js and PostgreSQL, ML in Python.',
+    projects: () => 'SmartHabbit (backend) · BU-LabTrack (backend API) · CAPCOM: Storm Watch (NASA Space Apps 2026)',
     research: () => 'IoT Sentinel: XGBoost + Isolation Forest + decision fusion → 4-tier risk. IEEE Xplore, ITC-Egypt 2026.',
-    arena: () => 'ICPC ECPC quals: 88th (2025), 177th (2026). 248+ Codeforces problems. Next: ODC Champions, 3 Dec.',
+    arena: () => 'ICPC ECPC qualifications: 88th (2025), 177th (2026). 248+ Codeforces problems.',
     contact: () => `email: ${EMAIL}\ngithub: adham107harp\nlinkedin: adham-harp-43bb6232b`,
     poke: () => { api.onPoke && api.onPoke(); return 'ouch. he says hi.'; },
     'sudo hire adham': () => { setTimeout(() => { closeTerm(); goTo(6); setTimeout(() => api.onSend && api.onSend(), 2800); }, 900); return '[sudo] permission granted. 201 Created — taking you to the capstone…'; },
@@ -521,7 +520,6 @@ function setupUI() {
   document.addEventListener('visibilitychange', () => sound.pause(document.hidden));
   syncSound();
 
-  loadGitHub($('#gh-live'));
 
   addEventListener('keydown', (e) => {
     const typingField = /INPUT|TEXTAREA/.test(document.activeElement?.tagName);
