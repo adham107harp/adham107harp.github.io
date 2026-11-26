@@ -288,3 +288,4 @@ body.live-mode{overflow:hidden}
 .links,.tools,.links a,.chip-btn{flex-shrink:0}
 .links a,.chip-btn{white-space:nowrap}
 @media (max-width:1380px){ .links{margin-left:auto} .links a{padding:8px 8px;font-size:13.5px} .tools{margin-left:8px} }
+.lg-ph.cv{background:var(--gold);color:#1a1206;width:24px}
