@@ -33,7 +33,10 @@ lenis.on('scroll', ScrollTrigger.update);
 gsap.ticker.add((time) => lenis.raf(time * 1000));
 gsap.ticker.lagSmoothing(0);
 const sections = [...document.querySelectorAll('.sec')];
-const goTo = (i) => lenis.scrollTo(sections[i], { offset: i === 0 ? 0 : -Math.max(0, (innerHeight - sections[i].offsetHeight) / 2), duration: reduced ? 0 : 2.2 });
+const stageEl = document.getElementById('stage');
+const stageRect = () => stageEl.getBoundingClientRect();
+const isPortrait = () => { const r = stageRect(); return r.width / Math.max(1, r.height) < 1.15; };
+const goTo = (i) => lenis.scrollTo(sections[i], { offset: isNarrow() ? -stageRect().height : 0, duration: reduced ? 0 : 2 });
 document.querySelectorAll('[data-go]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); goTo(+a.dataset.go); }));
 
 // ---------- hero name: decode from hieroglyphs ----------
@@ -67,7 +70,7 @@ async function start() {
 
   let dpr = Math.min(devicePixelRatio, isNarrow() ? 1.5 : 1.75);
   renderer.setPixelRatio(dpr);
-  renderer.setSize(innerWidth, innerHeight, false);
+  renderer.setSize(stageRect().width, stageRect().height, false);
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.12;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
 
@@ -90,6 +93,7 @@ async function start() {
   document.querySelectorAll('[data-skill]').forEach((b) => b.addEventListener('click', () => {
     document.querySelectorAll('[data-skill].on').forEach((x) => x.classList.remove('on')); b.classList.add('on');
     const k = b.dataset.skill, line = SKILLS[k]; world.highlightSkill && world.highlightSkill(k);
+    const out = $('#used-in'); if (out && line) { out.querySelector('b').textContent = `${k} — ${SKILLS[k][0]}`; gsap.fromTo(out, { opacity: 0.3 }, { opacity: 1, duration: 0.4 }); }
     if (line) ui.say(`${k}: ${line[lang === 'ar' ? 1 : 0]}`, { temp: true, hold: 5200 });
     guide.setMood('excited', 2.5); sound.play('arrive');
   }));
@@ -125,7 +129,7 @@ async function start() {
   };
   artifacts.onUnlock((a, n, total) => { guide.setMood('love', 2.5); sound.play('arrive'); if (n === total) setTimeout(() => ui.say(L(EXTRA.allArtifacts), { temp: true, hold: 6000 }), 1500); });
 
-  const rt = new THREE.WebGLRenderTarget(innerWidth * dpr, innerHeight * dpr, { type: THREE.HalfFloatType, samples: 4 });
+  const rt = new THREE.WebGLRenderTarget(stageRect().width * dpr, stageRect().height * dpr, { type: THREE.HalfFloatType, samples: 4 });
   const composer = new EffectComposer(renderer, rt);
   composer.addPass(new RenderPass(scene, camera));
   let gtao = null;
@@ -151,18 +155,19 @@ async function start() {
   // camera rig keyframes (position + target per level)
   let camPos = [], camTgt = [], posCurve, tgtCurve, rigNarrow = null;
   function buildRig() {
-  rigNarrow = isNarrow(); camPos = []; camTgt = [];
+  rigNarrow = isPortrait(); camPos = []; camTgt = [];
   for (let L = 0; L < N; L++) {
     const p = standPoint(L);
     if (L === 0) {
-      if (rigNarrow) { camPos.push(new THREE.Vector3(5.5, 3.2, p.z + 10)); camTgt.push(new THREE.Vector3(2.2, 2.6, p.z - 2)); }
+      if (rigNarrow) { camPos.push(new THREE.Vector3(5.6, 3.1, p.z + 9.5)); camTgt.push(new THREE.Vector3(1.9, 2.9, p.z - 3)); }
       else { camPos.push(new THREE.Vector3(10, 4.6, p.z + 13)); camTgt.push(new THREE.Vector3(-1.2, 6.2, 8)); }
       continue;
     }
-    if (L === N - 1) { camPos.push(new THREE.Vector3(-7.5, p.y + 3.6, 12.5)); camTgt.push(new THREE.Vector3(-0.6, p.y + 2.1, 0.4)); continue; }
+    if (L === N - 1) { camPos.push(new THREE.Vector3(-5.8, p.y + 3.1, 10.2)); camTgt.push(new THREE.Vector3(-0.4, p.y + 1.9, 0.6)); continue; }
     const side = Math.sign(p.x) || 1;
-    camPos.push(new THREE.Vector3(p.x + side * 3.2, p.y + 3.3, p.z + 10.5));
-    camTgt.push(new THREE.Vector3(p.x * 0.85 + side * 1.2, p.y + 1.7, p.z - 1.2));
+    const k = rigNarrow ? 0.82 : 1;
+    camPos.push(new THREE.Vector3(p.x + side * 2.6 * k, p.y + 2.8 * k, p.z + 8.6 * k));
+    camTgt.push(new THREE.Vector3(p.x * 0.92 + side * 0.8, p.y + 1.6, p.z - 1));
   }
   posCurve = new THREE.CatmullRomCurve3(camPos, false, 'centripetal');
   tgtCurve = new THREE.CatmullRomCurve3(camTgt, false, 'centripetal');
@@ -177,21 +182,21 @@ async function start() {
 
   // ---------- scroll -> q ----------
   let bounds = [];
-  const measure = () => { bounds = sections.map((s) => s.offsetTop); };
+  const measure = () => { const y = lenis.scroll ?? scrollY; bounds = sections.map((s) => s.getBoundingClientRect().top + y); };
   measure(); addEventListener('load', measure);
   new ResizeObserver(measure).observe(document.body);
   const sstep = (a, b, x) => { const t = THREE.MathUtils.clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
   function scrollQ() {
-    const s = (lenis.scroll ?? scrollY) + innerHeight * 0.5, w = innerHeight * 0.42;
+    const sh = isNarrow() ? stageRect().height : 0, s = (lenis.scroll ?? scrollY) + sh + (innerHeight - sh) * 0.45, w = (innerHeight - sh) * 0.4;
     let q = 0; for (let i = 1; i < bounds.length; i++) q += sstep(bounds[i] - w, bounds[i] + w, s);
     return q;
   }
 
   // ---------- interaction ----------
   const mouse = new THREE.Vector2(), ray = new THREE.Raycaster();
-  addEventListener('pointermove', (e) => { mouse.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); });
+  addEventListener('pointermove', (e) => { const r = stageRect(); mouse.set(THREE.MathUtils.clamp(((e.clientX - r.left) / r.width) * 2 - 1, -1.5, 1.5), THREE.MathUtils.clamp(-((e.clientY - r.top) / r.height) * 2 + 1, -1.5, 1.5)); });
   canvas.addEventListener('pointerdown', (e) => {
-    const m = new THREE.Vector2((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+    const r = stageRect(); const m = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(m, camera);
     if (ray.intersectObject(guide.root, true).length) {
       guide.poke(); sound.play('poke');
@@ -240,10 +245,10 @@ async function start() {
 
   // ---------- resize ----------
   function resize() {
-    const w = innerWidth, h = innerHeight;
+    const r = stageRect(), w = Math.max(1, r.width), h = Math.max(1, r.height);
     renderer.setSize(w, h, false); composer.setSize(w, h); bloom.setSize(w / 2, h / 2); if (gtao) gtao.setSize(w, h);
-    if (rigNarrow !== isNarrow()) buildRig();
-    camera.aspect = w / h; camera.fov = w / h < 0.8 ? 60 : w / h < 1.2 ? 50 : 42; camera.updateProjectionMatrix();
+    if (rigNarrow !== isPortrait()) buildRig();
+    camera.aspect = w / h; camera.fov = w / h < 0.8 ? 58 : w / h < 1.2 ? 50 : 42; camera.updateProjectionMatrix();
   }
   addEventListener('resize', resize); resize();
 
@@ -254,7 +259,6 @@ async function start() {
   guideXZ(qS, prevXZ);
   guide.root.position.set(prevXZ.x, heightAt(prevXZ.x, prevXZ.y), prevXZ.y);
   let frames = 0, slowAcc = 0, perfChecked = location.hash.startsWith('#hq'); const snap = location.hash === '#hqsnap';
-  let offsetS = shift[0];
 
   function frame() {
     const now = performance.now(), dt = Math.min((now - tPrev) / 1000, 0.05); tPrev = now; tAcc += dt; const t = tAcc;
@@ -289,12 +293,6 @@ async function start() {
     }
     camera.position.x += mouse.x * 0.35; camera.position.y += mouse.y * 0.2;
     camera.lookAt(look);
-    // compose: push the subject away from the panel
-    const lo = Math.floor(qS), hi = Math.min(lo + 1, N - 1), f = qS - lo;
-    const want = isNarrow() ? 0.5 : THREE.MathUtils.lerp(shift[lo], shift[hi], f);
-    offsetS += (want - offsetS) * Math.min(1, dt * 5);
-    const W = innerWidth, Hh = innerHeight, extra = isNarrow() ? 0 : 0.42;
-    if (extra) camera.setViewOffset(W * (1 + extra), Hh, W * extra * offsetS, 0, W, Hh); else camera.setViewOffset(W, Hh * 1.5, 0, Hh * 0.4, W, Hh);
 
     // level arrival -> the guide speaks
     const near = Math.round(qS);
@@ -303,7 +301,7 @@ async function start() {
       lastSpoken = near; ui.lines(LINES[lang][near]); guide.setMode(MODES[near]); sound.play('arrive'); guide.setMood(MOOD_BY_LEVEL[near]); if (near >= 1) artifacts.unlock('first-step'); if (near === N - 1) artifacts.unlock('summit');
     }
     if (Math.abs(qS - lastSpoken) > 0.18 && lastSpoken !== -1) { lastSpoken = -1; ui.hide(); if (guide.st.mode !== 'celebrate') guide.setMode('idle'); }
-    if (near !== curLevel) { curLevel = near; ui.level(near); ui.avoid(sections[near]); }
+    if (near !== curLevel) { curLevel = near; ui.level(near); }
 
     world.packetBoost = Math.max(world.packetBoost, Math.min(1, Math.abs(lenis.velocity || 0) / 60));
     world.update(t, dt, camera);
@@ -318,12 +316,12 @@ async function start() {
 
     // bubble follows the head
     const head = guide.headAnchor(); tmp.copy(head).project(camera);
-    ui.place((tmp.x * 0.5 + 0.5) * innerWidth, (-tmp.y * 0.5 + 0.5) * innerHeight, tmp.z < 1);
+    const SR = stageRect(); ui.place((tmp.x * 0.5 + 0.5) * SR.width, (-tmp.y * 0.5 + 0.5) * SR.height, tmp.z < 1, SR);
 
     if ((hoverTick = (hoverTick + 1) % 6) === 0) {
       ray.setFromCamera(mouse, camera); const onGuide = ray.intersectObject(guide.root, true).length > 0; const hit = onGuide || ray.intersectObjects(world.clickables, false).length > 0;
       if (hit !== hovering) { hovering = hit; canvas.style.cursor = hit ? 'pointer' : ''; }
-      ui.hint(onGuide, (tmp.x * 0.5 + 0.5) * innerWidth, (-tmp.y * 0.5 + 0.5) * innerHeight);
+      ui.hint(onGuide, (tmp.x * 0.5 + 0.5) * SR.width, (-tmp.y * 0.5 + 0.5) * SR.height);
     }
 
     grade.uniforms.t.value = t;
@@ -358,16 +356,15 @@ setPct(0.15);
 // ---------- panel reveals ----------
 function revealPanels() {
   if (reduced) return;
-  document.querySelectorAll('.sec:not(#hero) .panel').forEach((p) => {
-    const h2 = p.querySelector('h2');
+  document.querySelectorAll('.sec:not(#hero)').forEach((sec) => {
+    const h2 = sec.querySelector('h2');
     const split = h2 ? SplitText.create(h2, { type: 'words', mask: 'words' }) : null;
-    const tl = gsap.timeline({ scrollTrigger: { trigger: p, start: 'top 82%', toggleActions: 'play none none reverse' } });
-    tl.from(p, { y: 60, opacity: 0, duration: 0.9, ease: 'power3.out' });
-    if (split) tl.from(split.words, { yPercent: 110, duration: 0.7, stagger: 0.06, ease: 'power3.out' }, 0.15);
-    const bits = p.querySelectorAll('.facts li,.chips span,.proj,.arena li,.certs li,.bench li,.pipe li');
-    if (bits.length) tl.from(bits, { y: 14, opacity: 0, duration: 0.5, stagger: 0.03, ease: 'power2.out' }, 0.3);
+    const tl = gsap.timeline({ scrollTrigger: { trigger: sec, start: 'top 75%', once: true } });
+    if (split) tl.from(split.words, { yPercent: 110, duration: 0.8, stagger: 0.06, ease: 'power3.out' });
+    const bits = sec.querySelectorAll(':scope > .label, :scope > p, .facts li, .skills button, .proj, .pipe > *, .sim, .game-card, .certs li, .bench li, #req, .contact-links li, .wall li');
+    if (bits.length) tl.from(bits, { y: 16, opacity: 0, duration: 0.55, stagger: 0.025, ease: 'power2.out' }, 0.1);
   });
-  gsap.from('.hero-panel > :not(h1)', { y: 24, opacity: 0, duration: 1, stagger: 0.12, ease: 'power3.out', delay: 0.5 });
+  gsap.from('#hero > :not(h1)', { y: 20, opacity: 0, duration: 0.9, stagger: 0.1, ease: 'power3.out', delay: 0.4 });
 }
 
 // ---------- UI: bubble, minimap, language, terminal, contact ----------
@@ -401,24 +398,18 @@ function setupUI() {
   };
   api.hide = () => { clearTimeout(autoT); if (!visible) return; visible = false; talking = false; if (typing) typing.kill(); gsap.to(bubble, { scale: 0.7, opacity: 0, duration: 0.2, onComplete: () => { if (!visible) bubble.hidden = true; } }); };
   api.talking = () => talking;
-  let bw = 0, bh = 0, avoidEl = null, avoidSide = '';
-  api.avoid = (sec) => { avoidEl = sec ? sec.querySelector('.panel') : null; avoidSide = sec ? sec.dataset.side : ''; };
-  api.place = (x, y, ok) => {
+  let bw = 0, bh = 0;
+  api.place = (x, y, ok, SR) => {
     if (bubble.hidden) return;
     bw = bubble.offsetWidth; bh = bubble.offsetHeight;
-    let left = x - 40, top = y - bh - 22, below = false;
-    if (top < 76) { top = y + 34; below = true; }
-    if (avoidEl && innerWidth > 820) {
-      const r = avoidEl.getBoundingClientRect();
-      if (r.bottom > top && r.top < top + bh) {
-        if (avoidSide === 'left' && left < r.right + 14) left = r.right + 14;
-        if (avoidSide === 'right' && left + bw > r.left - 14) left = r.left - bw - 14;
-      }
-    }
-    left = Math.max(12, Math.min(innerWidth - bw - 12, left));
-    top = Math.max(70, Math.min(innerHeight - bh - 12, top));
-    bubble.classList.toggle('below', below);
-    bubble.style.setProperty('--tail', `${Math.max(22, Math.min(bw - 22, x - left))}px`);
+    const top0 = isNarrow() ? 62 : 74;
+    let left = x - 40, top = y - bh - 20, below = false, side = false;
+    if (top < top0 && isNarrow()) { side = true; top = y + 10; left = x + 44 + bw < SR.width ? x + 44 : x - bw - 44; }
+    else if (top < top0) { top = y + 30; below = true; }
+    left = Math.max(10, Math.min(SR.width - bw - 10, left));
+    top = Math.max(top0, Math.min(SR.height - bh - 10, top));
+    bubble.classList.toggle('below', below); bubble.classList.toggle('side', side);
+    bubble.style.setProperty('--tail', `${Math.max(20, Math.min(bw - 20, x - left))}px`);
     bubble.style.transform = `translate(${left}px,${top}px)`;
     bubble.style.visibility = ok ? 'visible' : 'hidden';
   };
@@ -565,7 +556,7 @@ function setupUI() {
   drawArt();
 
   // logos: drop any icon that fails to load (offline or blocked)
-  document.querySelectorAll('img.lg').forEach((i) => { const kill = () => i.remove(); if (i.complete && !i.naturalWidth) kill(); else i.addEventListener('error', kill); });
+  document.querySelectorAll('img.lg').forEach((i) => { const kill = () => { if (i.closest('.certs,.wall')) { const ph = document.createElement('span'); ph.className = 'lg-ph'; i.replaceWith(ph); } else i.remove(); }; if (i.complete && !i.naturalWidth) kill(); else i.addEventListener('error', kill); });
 
   if (!reduced) {
     // custom cursor

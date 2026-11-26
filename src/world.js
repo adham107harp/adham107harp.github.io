@@ -237,7 +237,7 @@ export function buildWorld(scene, renderer, loadingManager, quality = 'high') {
         float w = (1.-y)*.42 + .04; float d = abs(uv.x-.5 + (nn-.5)*.25*y);
         float f = smoothstep(w, w*.35, d) * smoothstep(1., .25, y + nn*.35) * smoothstep(0.,.08,y);
         vec3 c = mix(vec3(1.5,.5,.1), vec3(1.9,1.35,.7), smoothstep(.3,.9,f*(1.2-y)));
-        gl_FragColor = vec4(c*f*.75, f); }`,
+        gl_FragColor = vec4(c*f*.5, f); }`,
   });
   up((t) => (flameMat.uniforms.t.value = t));
   const bronze = new THREE.MeshPhysicalMaterial({ color: 0x8a5a2b, metalness: 0.9, roughness: 0.35 });
@@ -248,7 +248,7 @@ export function buildWorld(scene, renderer, loadingManager, quality = 'high') {
     const coals = new THREE.Mesh(new THREE.CircleGeometry(0.55, 20), glow(0xff5a1a, 1.2)); coals.rotation.x = -Math.PI / 2; coals.position.set(x, 2.45, z); scene.add(coals);
     const fl = new THREE.Group(); fl.position.set(x, 2.45, z); scene.add(fl);
     for (let k = 0; k < 3; k++) { const p = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.8), flameMat); p.position.y = 0.85; p.rotation.y = (k / 3) * Math.PI; fl.add(p); }
-    const light = new THREE.PointLight(0xff8a3c, 8, 14, 1.7); light.position.set(x, 3.4, z + 0.3); scene.add(light);
+    const light = new THREE.PointLight(0xff8a3c, 6, 12, 1.8); light.position.set(x, 3.4, z + 0.3); scene.add(light);
     // embers
     const ne = 30, ep = new Float32Array(ne * 3), seeds = Array.from({ length: ne }, () => Math.random());
     const eg = new THREE.BufferGeometry(); eg.setAttribute('position', new THREE.BufferAttribute(ep, 3));
@@ -256,7 +256,7 @@ export function buildWorld(scene, renderer, loadingManager, quality = 'high') {
     em.position.set(x, 2.6, z); scene.add(em);
     const ph = Math.random() * 10;
     up((t) => {
-      const f = 1 + Math.sin(t * 13 + ph) * 0.07 + Math.sin(t * 7.3 + ph) * 0.06; fl.scale.set(1, f, 1); light.intensity = 7.5 * f; fl.rotation.y = Math.sin(t * 0.7 + ph) * 0.3;
+      const f = 1 + Math.sin(t * 13 + ph) * 0.07 + Math.sin(t * 7.3 + ph) * 0.06; fl.scale.set(1, f, 1); light.intensity = 5.5 * f; fl.rotation.y = Math.sin(t * 0.7 + ph) * 0.3;
       for (let i = 0; i < ne; i++) { const u = (seeds[i] + t * (0.25 + seeds[i] * 0.3)) % 1; ep[i * 3] = Math.sin(seeds[i] * 50 + t) * 0.25 * u; ep[i * 3 + 1] = u * 3; ep[i * 3 + 2] = Math.cos(seeds[i] * 70 + t) * 0.25 * u; }
       eg.attributes.position.needsUpdate = true;
     });
