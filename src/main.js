@@ -101,7 +101,7 @@ async function start() {
   const LIVE = {
     smarthabbit: { name: 'SmartHabbit', url: 'https://adham107harp.github.io/smarthabbit/login.html' },
     labtrack: { name: 'BU-LabTrack', url: 'https://adham107harp.github.io/BU-LabTrack/' },
-    capcom: { name: 'CAPCOM: Storm Watch', url: 'https://capcom-storm-watch.vercel.app/' },
+    capcom: { name: 'CAPCOM: Storm Watch', url: 'https://adham107harp.github.io/capcom/', open: 'https://capcom-storm-watch.vercel.app/' },
   };
   const css3d = new CSS3DRenderer(); css3d.domElement.className = 'live-layer'; $('#stage').append(css3d.domElement);
   const liveScene = new THREE.Scene();
@@ -138,7 +138,7 @@ async function start() {
     wrap.style.opacity = '0';
     live = { key, obj, wrap, plane, bezel, portrait, t0: performance.now() };
     liveHud.querySelector('.live-name').textContent = info.name + ' · live demo';
-    liveHud.querySelector('.live-open').href = info.url; liveHud.hidden = false;
+    liveHud.querySelector('.live-open').href = info.open || info.url; liveHud.hidden = false;
     guide.setMood('excited', 3); ui.say(lang === 'ar' ? 'ده الديمو الحقيقي. جرّبه بنفسك.' : 'This is the real thing. Go ahead, try it.', { temp: true }); sound.play('whoosh');
     artifacts.unlock && artifacts.unlock('insider');
   }
