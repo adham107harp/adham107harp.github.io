@@ -9,6 +9,7 @@ const LIST = [
   { id: 'root', name: 'Root access', hint: 'Open the terminal', icon: '𓏏' },
   { id: 'polyglot', name: 'Polyglot', hint: 'Make the guide speak Arabic', icon: '𓅓' },
   { id: 'dj', name: 'DJ', hint: 'Turn the sound on', icon: '𓊖' },
+  { id: 'insider', name: 'Insider', hint: 'Use a live demo inside the pyramid', icon: '𓉐' },
   { id: 'hired', name: '201 Created', hint: 'Send a real request', icon: '𓎛' },
 ];
 const KEY = 'adham-artifacts';

@@ -351,7 +351,10 @@ function buildProps(world, pyr, lm) {
       const scr = new THREE.Mesh(new THREE.PlaneGeometry(1.62, 0.92), new THREE.MeshBasicMaterial({ map: t, color: 0x9c9c9c })); scr.position.set(0, 1.72, 0.037); mon.add(scr);
       const neck = new THREE.Mesh(new RoundedBoxGeometry(0.09, 1.2, 0.05, 1, 0.02), alu); neck.position.set(0, 0.62, -0.06); neck.castShadow = true; mon.add(neck);
       const foot = new THREE.Mesh(new RoundedBoxGeometry(0.55, 0.03, 0.34, 2, 0.012), alu); foot.position.set(0, 0.015, -0.02); foot.castShadow = foot.receiveShadow = true; mon.add(foot);
-      (world.props.screens ||= {})[['capcom', 'smarthabbit', 'labtrack'][i]] = bezel;
+      const key = ['capcom', 'smarthabbit', 'labtrack'][i];
+      (world.props.screens ||= {})[key] = bezel;
+      (world.props.screenPlanes ||= {})[key] = scr;
+      scr.userData.onClick = 'screen'; scr.userData.key = key; world.clickables.push(scr);
     });
     world.props.work = g;
   }

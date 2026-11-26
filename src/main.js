@@ -5,6 +5,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
 import { sound } from './sound.js';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -96,14 +97,63 @@ async function start() {
     if (line) ui.say(`${k}: ${line[lang === 'ar' ? 1 : 0]}`, { temp: true, hold: 5200 });
     guide.setMood('excited', 2.5); sound.play('arrive');
   }));
-  // project cards: fly the camera to the matching 3D screen
-  document.querySelectorAll('.see3d').forEach((b) => b.addEventListener('click', () => {
-    const h = world.props.screens?.[b.dataset.screen]; if (!h) return;
-    const tgt = new THREE.Vector3(); h.getWorldPosition(tgt);
-    const n = new THREE.Vector3(0, 0, 1).applyQuaternion(h.getWorldQuaternion(new THREE.Quaternion()));
-    focus = { tgt, pos: tgt.clone().add(n.multiplyScalar(2.6)).add(new THREE.Vector3(0, 0.25, 0)), k: 0, q: qS };
-    guide.setMode('point'); guide.setMood('excited', 3); ui.say(L(EXTRA.focus), { temp: true }); sound.play('whoosh');
-  }));
+  // project cards: open the real, live demo on the matching 3D screen
+  const LIVE = {
+    smarthabbit: { name: 'SmartHabbit', url: 'https://adham107harp.github.io/smarthabbit/login.html' },
+    labtrack: { name: 'BU-LabTrack', url: 'https://adham107harp.github.io/BU-LabTrack/' },
+    capcom: { name: 'CAPCOM: Storm Watch', url: 'https://capcom-storm-watch.vercel.app/' },
+  };
+  const css3d = new CSS3DRenderer(); css3d.domElement.className = 'live-layer'; $('#stage').append(css3d.domElement);
+  const liveScene = new THREE.Scene();
+  const liveHud = document.createElement('div'); liveHud.className = 'live-hud'; liveHud.hidden = true;
+  liveHud.innerHTML = '<button type="button" class="live-back">← Back to the tour</button><span class="live-name"></span><a class="live-open" target="_blank" rel="noopener">Open in a new tab ↗</a>';
+  $('#stage').append(liveHud);
+  let live = null; // { key, obj, frame, ready }
+  function enterLive(key) {
+    const plane = world.props.screenPlanes?.[key], info = LIVE[key]; if (!plane || !info || live?.key === key) return;
+    if (live) exitLive(true);
+    document.body.classList.add('live-mode'); lenis.stop(); resize();
+    // portrait phones: the monitor pivots to portrait, like a real one, so the app gets its mobile layout
+    const sr = stageRect(), portrait = sr.width / sr.height < 0.9;
+    const SW = portrait ? 0.92 : 1.62, SH = portrait ? 1.62 : 0.92;
+    const W = portrait ? Math.round(THREE.MathUtils.clamp(innerWidth * 0.96, 360, 480)) : Math.round(THREE.MathUtils.clamp(innerWidth * 0.92, 820, 1280));
+    const Hh = Math.round(W * SH / SW);
+    const wrap = document.createElement('div'); wrap.className = 'live-screen'; wrap.style.width = W + 'px'; wrap.style.height = Hh + 'px';
+    const frame = document.createElement('iframe'); frame.src = info.url; frame.title = info.name + ' live demo'; frame.loading = 'eager';
+    frame.allow = 'clipboard-write; fullscreen'; wrap.append(frame);
+    const spin = document.createElement('div'); spin.className = 'live-loading'; spin.textContent = 'Loading the live demo…'; wrap.append(spin);
+    frame.addEventListener('load', () => { spin.remove(); });
+    const obj = new CSS3DObject(wrap);
+    plane.updateWorldMatrix(true, false); plane.getWorldPosition(obj.position); plane.getWorldQuaternion(obj.quaternion);
+    const nrm = new THREE.Vector3(0, 0, 1).applyQuaternion(obj.quaternion);
+    obj.position.addScaledVector(nrm, 0.003); obj.scale.setScalar(SW / W);
+    liveScene.add(obj);
+    const bezel = world.props.screens[key];
+    if (portrait) gsap.to([bezel.rotation, plane.rotation], { z: -Math.PI / 2, duration: 0.8, ease: 'power2.inOut' });
+    // camera straight in front, screen filling most of the stage
+    const aspect = sr.width / sr.height, vf = THREE.MathUtils.degToRad(camera.fov);
+    const fitW = (SW / (portrait ? 0.94 : 0.88)) / 2 / (Math.tan(vf / 2) * aspect), fitH = (SH / (portrait ? 0.8 : 0.84)) / 2 / Math.tan(vf / 2);
+    const tgt = obj.position.clone();
+    focus = { tgt, pos: tgt.clone().addScaledVector(nrm, Math.max(fitW, fitH)), k: 0, q: qS, lock: true };
+    wrap.style.opacity = '0';
+    live = { key, obj, wrap, plane, bezel, portrait, t0: performance.now() };
+    liveHud.querySelector('.live-name').textContent = info.name + ' · live demo';
+    liveHud.querySelector('.live-open').href = info.url; liveHud.hidden = false;
+    guide.setMood('excited', 3); ui.say(lang === 'ar' ? 'ده الديمو الحقيقي. جرّبه بنفسك.' : 'This is the real thing. Go ahead, try it.', { temp: true }); sound.play('whoosh');
+    artifacts.unlock && artifacts.unlock('insider');
+  }
+  function exitLive(silent) {
+    if (!live) return;
+    if (live.portrait) gsap.to([live.bezel.rotation, live.plane.rotation], { z: 0, duration: 0.8, ease: 'power2.inOut' });
+    liveScene.remove(live.obj); live.wrap.remove(); live = null; liveHud.hidden = true;
+    document.body.classList.remove('live-mode'); resize(); lenis.start();
+    if (focus) focus.out = true;
+    if (!silent) sound.play('whoosh');
+  }
+  if (location.hash.startsWith('#hq')) window.__live = () => ({ k: focus && focus.k, lock: focus && focus.lock, out: focus && focus.out, op: live && live.wrap.style.opacity, cam: camera.position.toArray(), tgt: focus && focus.pos.toArray(), fov: camera.fov });
+  liveHud.querySelector('.live-back').addEventListener('click', () => exitLive());
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && live) exitLive(); });
+  document.querySelectorAll('.see3d').forEach((b) => b.addEventListener('click', () => enterLive(b.dataset.screen)));
   // research: attack simulator drives the hologram
   const threat = $('#threat'), riskOut = $('#risk-out');
   threat.addEventListener('input', () => {
@@ -218,6 +268,7 @@ async function start() {
       setTimeout(() => { o.visible = true; o.scale.set(0.01, 0.01, 0.01); gsap.to(o.scale, { x: 1, y: 1.18, z: 1, duration: 0.8, ease: 'elastic.out(1,.5)' }); b.userData.popped = false; }, 5000);
     } else if (kind === 'rocket') { world.props.rocket.userData.boost = 1; sound.play('whoosh'); ui.say(CLICKS.rocket[lang], { temp: true }); }
     else if (kind === 'moon') { ui.say(CLICKS.moon[lang], { temp: true }); sound.play('arrive'); artifacts.unlock('moonwalker'); guide.setMood('surprised', 2); }
+    else if (kind === 'screen') enterLive(o.userData.key);
     else if (kind === 'cap') { fireBeam(); ui.say(CLICKS.cap[lang], { temp: true }); }
   });
   // pointer cursor over the guide (cheap: test every few frames)
@@ -245,7 +296,7 @@ async function start() {
   // ---------- resize ----------
   function resize() {
     const r = stageRect(), w = Math.max(1, r.width), h = Math.max(1, r.height);
-    renderer.setSize(w, h, false); composer.setSize(w, h); bloom.setSize(w / 2, h / 2); if (gtao) gtao.setSize(w, h);
+    renderer.setSize(w, h, false); css3d.setSize(w, h); composer.setSize(w, h); bloom.setSize(w / 2, h / 2); if (gtao) gtao.setSize(w, h);
     if (rigNarrow !== isPortrait()) buildRig();
     camera.aspect = w / h; camera.fov = w / h < 0.8 ? 58 : w / h < 1.2 ? 50 : 42; camera.updateProjectionMatrix();
   }
@@ -286,11 +337,11 @@ async function start() {
     posCurve.getPoint(u, camera.position); tgtCurve.getPoint(u, look);
     if (intro.k > 0) camera.position.lerp(introFrom, intro.k * intro.k);
     if (focus) {
-      if (Math.abs(qS - focus.q) > 0.25) focus.out = true;
-      focus.k += ((focus.out ? 0 : 1) - focus.k) * Math.min(1, dt * 3); if (focus.out && focus.k < 0.01) focus = null;
+      if (!focus.lock && Math.abs(qS - focus.q) > 0.25) focus.out = true;
+      focus.k += ((focus.out ? 0 : 1) - focus.k) * Math.min(1, dt * (focus.lock ? 4 : 3)); if (focus.out && focus.k < 0.01) focus = null;
       if (focus) { const e = focus.k * focus.k * (3 - 2 * focus.k); camera.position.lerp(focus.pos, e); look.lerp(focus.tgt, e); }
     }
-    camera.position.x += mouse.x * 0.35; camera.position.y += mouse.y * 0.2;
+    if (!live) { camera.position.x += mouse.x * 0.35; camera.position.y += mouse.y * 0.2; }
     camera.lookAt(look);
 
     // level arrival -> the guide speaks
@@ -325,6 +376,7 @@ async function start() {
 
     grade.uniforms.t.value = t;
     if (useComposer) composer.render(dt); else renderer.render(scene, camera);
+    if (live) { live.wrap.style.opacity = String(THREE.MathUtils.clamp(Math.max((now - live.t0 - 900) / 400, focus ? (focus.k - 0.9) * 10 : 1), 0, 1)); css3d.render(liveScene, camera); }
 
     // adaptive quality after warm-up
     frames++;
