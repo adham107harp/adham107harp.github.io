@@ -427,11 +427,11 @@ function buildProps(world, pyr, lm) {
     }
     const game = world.game = { active: false, score: 0, left: 0, best: 0, onEnd: null, onTick: null };
     const spawn = (b) => { b.position.set(center.x + (Math.random() - 0.5) * 6, center.y - 1.5 - Math.random() * 3, center.z + 1 + Math.random() * 2.5); b.userData.v = 0.9 + Math.random() * 1.4; b.userData.w = Math.random() * 6; b.visible = true; b.scale.set(1, 1.18, 1); };
-    game.start = (sec = 15) => { game.active = true; game.score = 0; game.left = sec; pool.forEach((b, i) => { spawn(b); b.position.y -= i * 0.5; }); };
+    game.start = (sec = 15) => { game.active = true; game.score = 0; game.left = sec; game.endAt = performance.now() + sec * 1000; pool.forEach((b) => { spawn(b); b.position.y = center.y + 0.3 + Math.random() * 4.5; }); };
     game.hit = (b) => { if (!game.active || !b.visible) return false; game.score++; b.visible = false; setTimeout(() => game.active && spawn(b), 350); return true; };
     up((t, dt) => {
       if (!game.active) return;
-      game.left -= dt; game.onTick && game.onTick(game);
+      game.left = Math.max(0, (game.endAt - performance.now()) / 1000); game.onTick && game.onTick(game);
       for (const b of pool) { if (!b.visible) continue; b.position.y += b.userData.v * dt; b.position.x += Math.sin(t * 1.5 + b.userData.w) * dt * 0.3; if (b.position.y > center.y + 7) spawn(b); }
       if (game.left <= 0) { game.active = false; pool.forEach((b) => (b.visible = false)); game.best = Math.max(game.best, game.score); game.onEnd && game.onEnd(game); }
     });
