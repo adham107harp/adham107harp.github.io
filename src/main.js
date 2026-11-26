@@ -112,7 +112,7 @@ async function start() {
   function enterLive(key) {
     const plane = world.props.screenPlanes?.[key], info = LIVE[key]; if (!plane || !info || live?.key === key) return;
     if (live) exitLive(true);
-    document.body.classList.add('live-mode'); lenis.stop(); resize();
+    document.body.classList.add('live-mode'); lenis.stop(); resize(); camera.zoom = 1; camera.updateProjectionMatrix();
     // portrait phones: the monitor pivots to portrait, like a real one, so the app gets its mobile layout
     const sr = stageRect(), portrait = sr.width / sr.height < 0.9;
     const SW = portrait ? 0.92 : 1.62, SH = portrait ? 1.62 : 0.92;
@@ -132,7 +132,7 @@ async function start() {
     if (portrait) gsap.to([bezel.rotation, plane.rotation], { z: -Math.PI / 2, duration: 0.8, ease: 'power2.inOut' });
     // camera straight in front, screen filling most of the stage
     const aspect = sr.width / sr.height, vf = THREE.MathUtils.degToRad(camera.fov);
-    const fitW = (SW / (portrait ? 0.94 : 0.88)) / 2 / (Math.tan(vf / 2) * aspect), fitH = (SH / (portrait ? 0.8 : 0.84)) / 2 / Math.tan(vf / 2);
+    const fitW = camera.zoom * (SW / (portrait ? 0.94 : 0.88)) / 2 / (Math.tan(vf / 2) * aspect), fitH = camera.zoom * (SH / (portrait ? 0.8 : 0.84)) / 2 / Math.tan(vf / 2);
     const tgt = obj.position.clone();
     focus = { tgt, pos: tgt.clone().addScaledVector(nrm, Math.max(fitW, fitH)), k: 0, q: qS, lock: true };
     wrap.style.opacity = '0';
@@ -150,6 +150,7 @@ async function start() {
     if (focus) focus.out = true;
     if (!silent) sound.play('whoosh');
   }
+  if (location.hash.startsWith('#hq')) window.__guidePx = () => { const b = new THREE.Box3().setFromObject(guide.root), r = stageRect(); const pts = [b.min, b.max, new THREE.Vector3(b.min.x, b.max.y, b.min.z), new THREE.Vector3(b.max.x, b.min.y, b.max.z)].map((v) => v.clone().project(camera)); const ys = pts.map((p) => (1 - p.y) / 2 * r.height), xs = pts.map((p) => (p.x + 1) / 2 * r.width); return { h: Math.round(Math.max(...ys) - Math.min(...ys)), frac: +((Math.max(...ys) - Math.min(...ys)) / r.height).toFixed(3), cx: Math.round((Math.min(...xs) + Math.max(...xs)) / 2), stage: [Math.round(r.width), Math.round(r.height)], fov: camera.fov }; };
   if (location.hash.startsWith('#hq')) window.__live = () => ({ k: focus && focus.k, lock: focus && focus.lock, out: focus && focus.out, op: live && live.wrap.style.opacity, cam: camera.position.toArray(), tgt: focus && focus.pos.toArray(), fov: camera.fov });
   liveHud.querySelector('.live-back').addEventListener('click', () => exitLive());
   addEventListener('keydown', (e) => { if (e.key === 'Escape' && live) exitLive(); });
@@ -294,12 +295,30 @@ async function start() {
   ui.onPoke = () => { guide.poke(); sound.play('poke'); };
 
   // ---------- resize ----------
+  // the guide's height as a fraction of the stage, as framed by the camera rig at the current level
+  const _gv = new THREE.Vector3(), guideH = new THREE.Box3().setFromObject(guide.root).getSize(new THREE.Vector3()).y || 1.6;
+  let lastQ = 0;
+  function guideFrac() {
+    const L = THREE.MathUtils.clamp(Math.round(lastQ), 0, N - 1), u = L / (N - 1);
+    const cam = camera.clone(); posCurve.getPoint(u, cam.position); tgtCurve.getPoint(u, _gv); cam.lookAt(_gv); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
+    const p = standPoint(L), feet = new THREE.Vector3(p.x, heightAt(p.x, p.z), p.z), head = feet.clone(); head.y += guideH;
+    return Math.max(0.05, Math.abs(head.project(cam).y - feet.project(cam).y) / 2);
+  }
+  let zoomTarget = 1, zoomLevel = -1;
+  function zoomFor() {
+    const h = stageRect().height, z0 = camera.zoom; camera.zoom = 1; camera.updateProjectionMatrix();
+    const want = THREE.MathUtils.clamp(h * (innerWidth < 600 ? 0.38 : innerWidth <= 1024 ? 0.32 : 0.29), 120, 340);
+    const z = THREE.MathUtils.clamp(want / Math.max(1, guideFrac() * h), 0.72, 1.25);
+    camera.zoom = z0; camera.updateProjectionMatrix(); return z;
+  }
   function resize() {
     const r = stageRect(), w = Math.max(1, r.width), h = Math.max(1, r.height);
     if (live) live.frozen = 0;
     renderer.setSize(w, h, false); css3d.setSize(w, h); composer.setSize(w, h); bloom.setSize(w / 2, h / 2); if (gtao) gtao.setSize(w, h);
     if (rigNarrow !== isPortrait()) buildRig();
-    camera.aspect = w / h; camera.fov = w / h < 0.8 ? 58 : w / h < 1.2 ? 50 : 42; camera.updateProjectionMatrix();
+    camera.aspect = w / h; camera.fov = w / h < 0.8 ? 58 : w / h < 1.2 ? 50 : 42;
+    // size the guide for the device: bigger on phones (small stage), capped on very large screens
+    if (live) { camera.zoom = 1; camera.updateProjectionMatrix(); } else { camera.zoom = zoomTarget = zoomFor(); camera.updateProjectionMatrix(); }
   }
   addEventListener('resize', resize); resize();
 
@@ -318,6 +337,11 @@ async function start() {
     const now = performance.now(), dt = Math.min((now - tPrev) / 1000, 0.05); tPrev = now; tAcc += dt; const t = tAcc;
     const q = scrollQ();
     qS += (q - qS) * Math.min(1, dt * (reduced ? 30 : 3.4)); if (snap) qS = q;
+    lastQ = qS;
+    if (!live) {
+      if (Math.round(qS) !== zoomLevel) { zoomLevel = Math.round(qS); zoomTarget = zoomFor(); }
+      const dz = zoomTarget - camera.zoom; if (Math.abs(dz) > 1e-4) { camera.zoom += dz * Math.min(1, snap ? 1 : dt * 2.5); camera.updateProjectionMatrix(); }
+    }
 
     // guide position on the climb
     guideXZ(qS, v2);
@@ -346,6 +370,8 @@ async function start() {
       if (focus) { const e = focus.k * focus.k * (3 - 2 * focus.k); camera.position.lerp(focus.pos, e); look.lerp(focus.tgt, e); }
     }
     if (!live) { camera.position.x += mouse.x * 0.35; camera.position.y += mouse.y * 0.2; }
+    // when zoomed in (small screens), drift the aim toward the guide so he never leaves the frame
+    if (camera.zoom > 1.001 && !focus) { tmp.copy(guide.root.position); tmp.y += isNarrow() ? 1.75 : 0.9; look.lerp(tmp, Math.min(0.45, (camera.zoom - 1) * 1.4)); }
     camera.lookAt(look);
 
     // level arrival -> the guide speaks
@@ -463,7 +489,7 @@ function setupUI() {
     bw = bubble.offsetWidth; bh = bubble.offsetHeight;
     const top0 = isNarrow() ? 62 : 74;
     let left = x - 40, top = y - bh - 20, below = false, side = false;
-    if (top < top0 && isNarrow()) { side = true; top = y + 10; left = x + 44 + bw < SR.width ? x + 44 : x - bw - 44; }
+    if (top < top0 && isNarrow()) { side = true; top = top0; left = x + 44 + bw < SR.width ? x + 44 : x - bw - 30; } // no room above: sit in the sky band beside his head, clear of the props
     else if (top < top0) { top = y + 30; below = true; }
     left = Math.max(10, Math.min(SR.width - bw - 10, left));
     top = Math.max(top0, Math.min(SR.height - bh - 10, top));
