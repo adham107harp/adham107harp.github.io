@@ -6,15 +6,16 @@
 
 A scroll-driven 3D portfolio built as Djoser's step pyramid at night: every step is one layer of my stack, and a mini version of me climbs it with you and explains each level (English or Egyptian Arabic).
 
-Built with [three.js](https://github.com/mrdoob/three.js), [GSAP](https://github.com/greensock/GSAP) (ScrollTrigger, SplitText) and [Lenis](https://github.com/darkroomengineering/lenis). Every 3D shape, texture and sound is generated in code: no model, image-texture or audio files.
+Built with [three.js](https://github.com/mrdoob/three.js), [GSAP](https://github.com/greensock/GSAP) (ScrollTrigger, SplitText) and [Lenis](https://github.com/darkroomengineering/lenis). Every 3D shape, texture and sound is generated in code: no 3D model or audio files. The only images are the project screenshots.
 
 ## Features
 
 - **A guide with moods.** Mini-Adham has a painted, expressive face and 13 moods (happy, excited, focused, thinking, cool, surprised, shy, annoyed, sleepy, dizzy, love, worried, vibing). They change with the level, with what you do (poke him, scroll too fast, leave him idle, turn the music on) and he puts on sunglasses or headphones when the mood calls for it.
 - **Contact form that delivers.** Messages go straight to my inbox through [FormSubmit](https://formsubmit.co), with the HTTP request and response shown live, a honeypot against bots and an email fallback.
-- **Gamified.** 10 hidden artifacts to collect, a Balloon Rush mini-game in the Arena, an attack simulator that drives the IoT Sentinel hologram, and a terminal (`help`, `mood cool`, `sudo hire adham`).
+- **Live demos inside the pyramid.** "View in 3D" flies to a monitor and mounts the project's real, live demo on it (CSS3D), so you can use SmartHabbit, BU-LabTrack or CAPCOM without leaving the page. On phones the monitor turns to portrait.
+- **Gamified.** 11 hidden artifacts to collect, a Balloon Rush mini-game in the Arena, an attack simulator that drives the IoT Sentinel hologram, and a terminal (`help`, `mood cool`, `sudo hire adham`).
 - **Physically based rendering.** Procedural sandstone (albedo, normal and roughness maps), sky-based environment lighting, soft moon shadows, ambient occlusion (GTAO), bloom and a light film grade.
-- **Live GitHub panel** with my latest repos and commits, tech logos from [Simple Icons](https://simpleicons.org), and generated sound (off by default): desert wind and a Hijaz-mode drone with oud-like plucks.
+- Tech logos from [Simple Icons](https://simpleicons.org), and generated sound (off by default): desert wind and a Hijaz-mode drone with oud-like plucks.
 - Arrow-key navigation, adaptive quality for slower devices, reduced-motion support, English / Egyptian Arabic guide.
 
 ## Run it
@@ -40,8 +41,9 @@ Push this folder to a repo (for example `adham107harp.github.io`), then Settings
 | `src/lines.js` | What mini-Adham says on each level (EN + AR) |
 | `src/textures.js` | Procedural PBR textures (stone, sand, moon) |
 | `src/sound.js` | WebAudio ambience and effects |
-| `src/github.js` | Live GitHub data |
-| `src/achievements.js` | The 10 hidden artifacts |
-| `src/main.js` | Scroll → camera/character, post-processing, bubble, terminal, contact form |
+| `src/achievements.js` | The 11 hidden artifacts |
+| `src/main.js` | Scroll → camera/character, post-processing, live demo screens, bubble, terminal, contact form |
+| `smarthabbit/`, `capcom/` | Static builds of those projects, served from this site so they can run inside the 3D monitors |
+| `assets/shots/` | Project screenshots shown on the monitors and cards |
 
 Easter eggs: press <kbd>`</kbd> for the terminal (`help`, `sudo hire adham`), click mini-Adham to poke him.
