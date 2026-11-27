@@ -99,9 +99,9 @@ async function start() {
   }));
   // project cards: open the real, live demo on the matching 3D screen
   const LIVE = {
-    smarthabbit: { name: 'SmartHabbit', url: 'https://adham107harp.github.io/smarthabbit/login.html' },
-    labtrack: { name: 'BU-LabTrack', url: 'https://adham107harp.github.io/BU-LabTrack/' },
-    capcom: { name: 'CAPCOM: Storm Watch', url: 'https://adham107harp.github.io/capcom/', open: 'https://capcom-storm-watch.vercel.app/' },
+    smarthabbit: { name: 'SmartHabbit', url: 'https://adham-harp.github.io/smarthabbit/login.html' },
+    labtrack: { name: 'BU-LabTrack', url: 'https://adham-harp.github.io/BU-LabTrack/' },
+    capcom: { name: 'CAPCOM: Storm Watch', url: 'https://adham-harp.github.io/capcom/', open: 'https://capcom-storm-watch.vercel.app/' },
   };
   const css3d = new CSS3DRenderer(); css3d.domElement.className = 'live-layer'; $('#stage').append(css3d.domElement);
   const liveScene = new THREE.Scene();
@@ -527,7 +527,7 @@ function setupUI() {
   // The access key only lets someone send mail to this inbox, so it is safe to ship in the page.
   const ENDPOINT = 'https://api.web3forms.com/submit';
   const ACCESS_KEY = '64907423-cd59-4133-8f33-a9a404e59b81';
-  const reqText = () => `POST /api/hire HTTP/1.1\nHost: adham107harp.github.io\nContent-Type: application/json\n\n{\n  "from": ${esc(f.name.value || 'you')},\n  "replyTo": ${esc(f.email.value || 'you@company.com')},\n  "about": ${esc(f.role.value || 'an opportunity')},\n  "message": ${esc((f.msg.value || '…').slice(0, 140))}\n}`;
+  const reqText = () => `POST /api/hire HTTP/1.1\nHost: adham-harp.github.io\nContent-Type: application/json\n\n{\n  "from": ${esc(f.name.value || 'you')},\n  "replyTo": ${esc(f.email.value || 'you@company.com')},\n  "about": ${esc(f.role.value || 'an opportunity')},\n  "message": ${esc((f.msg.value || '…').slice(0, 140))}\n}`;
   const render = () => { pre.textContent = reqText(); };
   Object.values(f).forEach((i) => i.addEventListener('input', render)); render();
   let sending = false;
@@ -577,7 +577,7 @@ function setupUI() {
     research: () => 'IoT Sentinel: XGBoost + Isolation Forest + decision fusion → 4-tier risk. IEEE Xplore, ITC-Egypt 2026.',
     arena: () => 'ICPC ECPC qualifications: 88th (2025), 177th (2026). 248+ Codeforces problems.',
     cv: () => { window.open('assets/Adham_Mohammed_Ateia_Harp_CV.pdf', '_blank', 'noopener'); return 'opening Adham_Mohammed_Ateia_Harp_CV.pdf …'; },
-    contact: () => `email: ${EMAIL}\ngithub: adham107harp\nlinkedin: adham-harp-43bb6232b`,
+    contact: () => `email: ${EMAIL}\ngithub: adham-harp\nlinkedin: adham-harp-43bb6232b`,
     poke: () => { api.onPoke && api.onPoke(); return 'ouch. he says hi.'; },
     'sudo hire adham': () => { setTimeout(() => { closeTerm(); goTo(6); setTimeout(() => api.onSend && api.onSend(), 2800); }, 900); return '[sudo] permission granted. 201 Created — taking you to the capstone…'; },
     clear: () => { out.textContent = ''; return null; },

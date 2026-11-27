@@ -1,8 +1,8 @@
 # Adham Harp — 3D portfolio
 
-[![Portfolio preview](assets/og.jpg)](https://adham107harp.github.io/)
+[![Portfolio preview](assets/og.jpg)](https://adham-harp.github.io/)
 
-**Live:** https://adham107harp.github.io/
+**Live:** https://adham-harp.github.io/
 
 A scroll-driven 3D portfolio built as Djoser's step pyramid at night: every step is one layer of my stack, and a mini version of me climbs it with you and explains each level (English or Egyptian Arabic).
 
@@ -28,7 +28,7 @@ python -m http.server 8000 # open http://localhost:8000
 
 ## Deploy on GitHub Pages
 
-Push this folder to a repo (for example `adham107harp.github.io`), then Settings → Pages → Deploy from branch → `main` / root. `dist/app.js` is committed, so no build step is needed on GitHub.
+Push this folder to a repo (for example `adham-harp.github.io`), then Settings → Pages → Deploy from branch → `main` / root. `dist/app.js` is committed, so no build step is needed on GitHub.
 
 ## Where things live
 
